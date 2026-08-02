@@ -1,0 +1,45 @@
+name: tchaka
+description: TCHAKA 2.0 - Transform ideas into impact.
+publish_to: "none"
+
+version: 2.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Backend
+  supabase_flutter: ^2.9.0
+
+  # State management
+  provider: ^6.1.5
+
+  # Navigation
+  go_router: ^16.0.0
+
+  # UI
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  generate: true
