@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../feed/presentation/feed_screen.dart';
+import '../../../app/main_shell.dart';
 import 'login_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -22,7 +22,7 @@ class AuthGate extends StatelessWidget {
           return const LoginScreen();
         }
 
-        return const FeedScreen();
+        return const MainShell();
       },
     );
   }
