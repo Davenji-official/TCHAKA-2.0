@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
-import '../features/profile/presentation/profile_screen.dart';
+import '../features/projects/presentation/create_project_screen.dart';
 
 final GoRouter tchakaRouter = GoRouter(
   initialLocation: '/',
@@ -27,19 +27,9 @@ final GoRouter tchakaRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/profile',
+      path: '/projects/create',
       builder: (context, state) {
-        return const PublicProfileScreen();
-      },
-    ),
-    GoRoute(
-      path: '/profile/:userId',
-      builder: (context, state) {
-        final userId = state.pathParameters['userId'];
-
-        return PublicProfileScreen(
-          userId: userId,
-        );
+        return const CreateProjectScreen();
       },
     ),
   ],
