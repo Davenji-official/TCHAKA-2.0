@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../features/explore/presentation/explore_screen.dart';
 import '../features/feed/presentation/feed_screen.dart';
@@ -25,6 +26,17 @@ class _MainShellState extends State<MainShell> {
     PublicProfileScreen(),
   ];
 
+  void _onDestinationSelected(int index) {
+    if (index == 2) {
+      context.push('/projects/create');
+      return;
+    }
+
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,11 +46,7 @@ class _MainShellState extends State<MainShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
