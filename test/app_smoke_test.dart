@@ -8,7 +8,7 @@ void main() {
   testWidgets('TCHAKA app starts successfully', (tester) async {
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'test-anon-key',
+      publishableKey: 'test-publishable-key',
     );
 
     await tester.pumpWidget(const TchakaApp());
