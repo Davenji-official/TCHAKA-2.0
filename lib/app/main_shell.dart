@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/explore/presentation/explore_screen.dart';
 import '../features/feed/presentation/feed_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 
@@ -15,11 +16,7 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _screens = const [
     FeedScreen(),
-    _ComingSoonScreen(
-      icon: Icons.explore_outlined,
-      title: 'Explorer',
-      message: 'Découvre bientôt les projets et créateurs de TCHAKA.',
-    ),
+    ExploreScreen(),
     _ComingSoonScreen(
       icon: Icons.add_circle_outline,
       title: 'Créer',
