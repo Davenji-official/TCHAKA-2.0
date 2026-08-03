@@ -48,18 +48,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
 
       if (profile != null) {
-        _usernameController.text =
-            profile['username'] as String? ?? '';
-        _fullNameController.text =
-            profile['full_name'] as String? ?? '';
-        _avatarUrlController.text =
-            profile['avatar_url'] as String? ?? '';
-        _bioController.text =
-            profile['bio'] as String? ?? '';
-        _countryController.text =
-            profile['country'] as String? ?? '';
-        _cityController.text =
-            profile['city'] as String? ?? '';
+        _usernameController.text = profile['username'] as String? ?? '';
+        _fullNameController.text = profile['full_name'] as String? ?? '';
+        _avatarUrlController.text = profile['avatar_url'] as String? ?? '';
+        _bioController.text = profile['bio'] as String? ?? '';
+        _countryController.text = profile['country'] as String? ?? '';
+        _cityController.text = profile['city'] as String? ?? '';
       }
 
       setState(() {
@@ -249,4 +243,3 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
-
