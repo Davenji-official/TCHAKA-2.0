@@ -120,14 +120,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Modifier mon profil'),
-    ),
-    body: const Center(
-      child: CircularProgressIndicator(),
-    ),
-  );
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Modifier mon profil'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
 
     return Scaffold(
@@ -191,7 +191,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _avatarUrlController,
                 keyboardType: TextInputType.url,
                 textInputAction: TextInputAction.next,
-                decoration: _decoration('URL de la photo de profil'),
+                decoration: _decoration(
+                  'URL de la photo de profil',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
