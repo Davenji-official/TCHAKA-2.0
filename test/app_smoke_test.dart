@@ -1,21 +1,21 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tchaka/app/app.dart';
+import 'package:tchaka/features/auth/presentation/login_screen.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  testWidgets('TCHAKA app starts successfully', (tester) async {
-    await Supabase.initialize(
-      url: 'http://127.0.0.1:54321',
-      publishableKey: 'test-publishable-key',
+  testWidgets('Login screen renders successfully', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LoginScreen(),
+      ),
     );
 
-    await tester.pumpWidget(const TchakaApp());
     await tester.pump();
 
     expect(find.text('Bienvenue sur TCHAKA'), findsOneWidget);
     expect(find.text('Adresse e-mail'), findsOneWidget);
     expect(find.text('Mot de passe'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+    expect(find.text('Créer un compte'), findsOneWidget);
   });
 }
