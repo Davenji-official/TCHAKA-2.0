@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../feed/presentation/feed_screen.dart';
 import 'login_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -21,38 +22,8 @@ class AuthGate extends StatelessWidget {
           return const LoginScreen();
         }
 
-        return const _AuthenticatedPlaceholder();
+        return const FeedScreen();
       },
-    );
-  }
-}
-
-class _AuthenticatedPlaceholder extends StatelessWidget {
-  const _AuthenticatedPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'TCHAKA',
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
-            const SizedBox(height: 8),
-            const Text('Session active'),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () async {
-                await Supabase.instance.client.auth.signOut();
-              },
-              child: const Text('Se déconnecter'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
