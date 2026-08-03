@@ -42,8 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.session == null) {
         setState(() {
-          _success =
-              'Compte créé. Vérifie ton adresse e-mail pour continuer.';
+          _success = 'Compte créé. Vérifie ton adresse e-mail pour continuer.';
         });
       } else {
         context.go('/');
