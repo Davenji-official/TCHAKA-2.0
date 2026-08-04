@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/animations/tchaka_entrance.dart';
+import '../../../../core/widgets/tchaka_badge.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
-import '../../../../core/animations/tchaka_entrance.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
@@ -139,7 +140,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       return;
     }
 
-    final previous = _likedProjects[projectId] ?? false;
+    final previous =
+        _likedProjects[projectId] ?? false;
 
     setState(() {
       _likedProjects[projectId] = !previous;
@@ -166,7 +168,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       _showError('Impossible de modifier le like.');
     }
   }
-    Future<void> _toggleBookmark(
+
+  Future<void> _toggleBookmark(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(project, 'id');
@@ -354,28 +357,29 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                     );
 
                     return TchakaEntrance(
-  delay: Duration(
-    milliseconds: 70 * index,
-  ),
-  child: _ProjectCard(
-                      project: project,
-                      index: index,
-                      liked:
-                          _likedProjects[projectId] ??
-                              false,
-                      bookmarked:
-                          _bookmarkedProjects[
-                                  projectId] ??
-                              false,
-                      followed:
-                          _followedCreators[
-                                  creatorId] ??
-                              false,
-                      onLike: () => _toggleLike(project),
-                      onBookmark: () =>
-                          _toggleBookmark(project),
-                      onFollow: () =>
-                          _toggleFollow(project),
+                      delay: Duration(
+                        milliseconds: 70 * index,
+                      ),
+                      child: _ProjectCard(
+                        project: project,
+                        index: index,
+                        liked:
+                            _likedProjects[projectId] ??
+                                false,
+                        bookmarked:
+                            _bookmarkedProjects[
+                                    projectId] ??
+                                false,
+                        followed:
+                            _followedCreators[
+                                    creatorId] ??
+                                false,
+                        onLike: () =>
+                            _toggleLike(project),
+                        onBookmark: () =>
+                            _toggleBookmark(project),
+                        onFollow: () =>
+                            _toggleFollow(project),
                       ),
                     );
                   },
@@ -388,17 +392,17 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
   }
     Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           'Découvre des projets',
-          style:
-              Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -418,11 +422,14 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
             ),
             suffixIcon: IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.tune_rounded),
+              icon: const Icon(
+                Icons.tune_rounded,
+              ),
             ),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius:
+                  BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
           ),
@@ -436,7 +443,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     return SizedBox(
       height: 54,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(
+        padding:
+            const EdgeInsets.symmetric(
           horizontal: 20,
         ),
         scrollDirection: Axis.horizontal,
@@ -448,7 +456,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
           return ChoiceChip(
             label: Text(filter.label),
-            selected: filter == _selectedFilter,
+            selected:
+                filter == _selectedFilter,
             onSelected: (_) {
               _selectFilter(filter);
             },
@@ -462,22 +471,24 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment:
+            MainAxisAlignment.center,
         children: [
           Icon(
             Icons.cloud_off_rounded,
             size: 56,
             color:
-                Theme.of(context).colorScheme.error,
+                Theme.of(context)
+                    .colorScheme
+                    .error,
           ),
           const SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style:
-                Theme.of(context)
-                    .textTheme
-                    .titleMedium,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium,
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
@@ -485,7 +496,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text('Réessayer'),
+            label: const Text(
+              'Réessayer',
+            ),
           ),
         ],
       ),
@@ -511,10 +524,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           Text(
             'Aucun projet pour le moment',
             textAlign: TextAlign.center,
-            style:
-                Theme.of(context)
-                    .textTheme
-                    .titleLarge,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge,
           ),
           const SizedBox(height: 8),
           const Text(
@@ -528,7 +540,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text('Actualiser'),
+            label: const Text(
+              'Actualiser',
+            ),
           ),
         ],
       ),
@@ -599,7 +613,8 @@ class _ProjectCard extends StatelessWidget {
         ) ??
         0;
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     final title = _stringValue(
       'title',
@@ -619,20 +634,36 @@ class _ProjectCard extends StatelessWidget {
       'Projet',
     );
 
-    final likes = _intValue('likes_count');
+    final likes =
+        _intValue('likes_count');
+
     final comments =
         _intValue('comments_count');
+
     final matchingSkills =
         _intValue('matching_skills_count');
+
     final score =
         _doubleValue('feed_score');
 
     final creatorId =
         _stringValue('creator_id');
 
-    return Card(
+    final normalizedCategory =
+        category.toLowerCase();
+
+    final isTrending = likes >= 100;
+
+    final isRising =
+        likes >= 25 && likes < 100;
+
+    final isImpact =
+        normalizedCategory.contains('impact') ||
+        normalizedCategory.contains('humanitaire');
+        return Card(
       clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 18),
+      margin:
+          const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -640,22 +671,92 @@ class _ProjectCard extends StatelessWidget {
           if (imageUrl.isNotEmpty)
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
-                  return const
-                      _ProjectImagePlaceholder();
-                },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (_, __, ___) {
+                      return const
+                          _ProjectImagePlaceholder();
+                    },
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (isTrending)
+                          const TchakaBadge(
+                            label: 'TENDANCE',
+                            icon: Icons
+                                .local_fire_department_rounded,
+                            highlight: true,
+                          ),
+                        if (isRising)
+                          const TchakaBadge(
+                            label: 'RISING',
+                            icon: Icons
+                                .rocket_launch_rounded,
+                            highlight: true,
+                          ),
+                        if (isImpact)
+                          const TchakaBadge(
+                            label: 'IMPACT',
+                            icon: Icons.public_rounded,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             )
           else
-            const AspectRatio(
+            AspectRatio(
               aspectRatio: 16 / 9,
-              child: _ProjectImagePlaceholder(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const _ProjectImagePlaceholder(),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (isTrending)
+                          const TchakaBadge(
+                            label: 'TENDANCE',
+                            icon: Icons
+                                .local_fire_department_rounded,
+                            highlight: true,
+                          ),
+                        if (isRising)
+                          const TchakaBadge(
+                            label: 'RISING',
+                            icon: Icons
+                                .rocket_launch_rounded,
+                            highlight: true,
+                          ),
+                        if (isImpact)
+                          const TchakaBadge(
+                            label: 'IMPACT',
+                            icon: Icons.public_rounded,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(
+            padding:
+                const EdgeInsets.fromLTRB(
               18,
               18,
               18,
@@ -667,27 +768,12 @@ class _ProjectCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration:
-                          BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(30),
-                        color:
-                            Theme.of(context)
-                                .colorScheme
-                                .primaryContainer,
-                      ),
-                      child: Text(
-                        category,
-                        style:
-                            Theme.of(context)
-                                .textTheme
-                                .labelMedium,
+                    Flexible(
+                      child: TchakaBadge(
+                        label:
+                            category.toUpperCase(),
+                        icon:
+                            Icons.category_rounded,
                       ),
                     ),
                     const Spacer(),
@@ -695,7 +781,8 @@ class _ProjectCard extends StatelessWidget {
                       onPressed: onBookmark,
                       icon: Icon(
                         bookmarked
-                            ? Icons.bookmark_rounded
+                            ? Icons
+                                .bookmark_rounded
                             : Icons
                                 .bookmark_border_rounded,
                       ),
@@ -705,14 +792,13 @@ class _ProjectCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   title,
-                  style:
-                      Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
-                            fontWeight:
-                                FontWeight.w700,
-                          ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(
+                        fontWeight:
+                            FontWeight.w700,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -726,7 +812,8 @@ class _ProjectCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.auto_awesome_rounded,
+                        Icons
+                            .auto_awesome_rounded,
                         size: 16,
                         color:
                             Theme.of(context)
@@ -734,11 +821,13 @@ class _ProjectCard extends StatelessWidget {
                                 .primary,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        '$matchingSkills compétence'
-                        '${matchingSkills > 1 ? 's' : ''} '
-                        'correspondante'
-                        '${matchingSkills > 1 ? 's' : ''}',
+                      Expanded(
+                        child: Text(
+                          '$matchingSkills compétence'
+                          '${matchingSkills > 1 ? 's' : ''} '
+                          'correspondante'
+                          '${matchingSkills > 1 ? 's' : ''}',
+                        ),
                       ),
                     ],
                   ),
@@ -762,7 +851,7 @@ class _ProjectCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Row(
+                                Row(
                   children: [
                     Icon(
                       liked
@@ -818,8 +907,7 @@ class _ProjectCard extends StatelessWidget {
                                       ? null
                                       : onFollow,
                               icon: const Icon(
-                                Icons
-                                    .person_rounded,
+                                Icons.person_rounded,
                               ),
                               label: const Text(
                                 'Suivi',
@@ -864,10 +952,9 @@ class _ProjectImagePlaceholder
         child: Icon(
           Icons.rocket_launch_outlined,
           size: 52,
-          color:
-              Theme.of(context)
-                  .colorScheme
-                  .primary,
+          color: Theme.of(context)
+              .colorScheme
+              .primary,
         ),
       ),
     );
@@ -914,7 +1001,8 @@ class _ProjectSkeleton
             radius: 0,
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding:
+                const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
