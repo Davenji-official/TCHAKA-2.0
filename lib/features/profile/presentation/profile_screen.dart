@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'skills_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../projects/data/project_engagement_service.dart';
@@ -386,6 +387,67 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             ],
           ),
+        const SizedBox(height: 36),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Compétences',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _isOwnProfile
+                  ? () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SkillsScreen(),
+                        ),
+                      );
+
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Gérer'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: CircleAvatar(
+              child: Icon(
+                Icons.psychology_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            title: const Text(
+              'Mes compétences',
+            ),
+            subtitle: const Text(
+              'Ajoute tes compétences et ton niveau de maîtrise.',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+            onTap: _isOwnProfile
+                ? () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SkillsScreen(),
+                      ),
+                    );
+
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }
+                : null,
+          ),
+        ),
         const SizedBox(height: 36),
         Text(
           'Publications',
