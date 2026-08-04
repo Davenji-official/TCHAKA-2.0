@@ -4,6 +4,7 @@ import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
 import '../../../../core/animations/tchaka_entrance.dart';
+import '../../../../core/widgets/tchaka_badge.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
