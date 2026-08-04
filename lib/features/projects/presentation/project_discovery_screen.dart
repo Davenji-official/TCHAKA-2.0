@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/animations/tchaka_entrance.dart';
-import '../../../../core/widgets/tchaka_badge.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
@@ -166,7 +165,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         _likedProjects[projectId] = previous;
       });
 
-      _showError('Impossible de modifier le like.');
+      _showError(
+        'Impossible de modifier le like.',
+      );
     }
   }
 
@@ -275,8 +276,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     return value.toString();
   }
-
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -294,7 +294,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       body: RefreshIndicator(
         onRefresh: _loadProjects,
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics:
+              const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -346,10 +347,14 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                 sliver: SliverList.builder(
                   itemCount: _projects.length,
                   itemBuilder: (context, index) {
-                    final project = _projects[index];
+                    final project =
+                        _projects[index];
 
                     final projectId =
-                        _stringValue(project, 'id');
+                        _stringValue(
+                      project,
+                      'id',
+                    );
 
                     final creatorId =
                         _stringValue(
@@ -358,30 +363,31 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                     );
 
                     return TchakaEntrance(
-  delay: Duration(
-    milliseconds: 70 * index,
-  ),
-  child: TchakaProjectCard(
-    project: project,
-    liked:
-        _likedProjects[projectId] ??
-            false,
-    bookmarked:
-        _bookmarkedProjects[
-                projectId] ??
-            false,
-    followed:
-        _followedCreators[
-                creatorId] ??
-            false,
-    onLike: () =>
-        _toggleLike(project),
-    onBookmark: () =>
-        _toggleBookmark(project),
-    onFollow: () =>
-        _toggleFollow(project),
-  ),
-);
+                      delay: Duration(
+                        milliseconds: 70 * index,
+                      ),
+                      child: TchakaProjectCard(
+                        project: project,
+                        liked:
+                            _likedProjects[
+                                    projectId] ??
+                                false,
+                        bookmarked:
+                            _bookmarkedProjects[
+                                    projectId] ??
+                                false,
+                        followed:
+                            _followedCreators[
+                                    creatorId] ??
+                                false,
+                        onLike: () =>
+                            _toggleLike(project),
+                        onBookmark: () =>
+                            _toggleBookmark(project),
+                        onFollow: () =>
+                            _toggleFollow(project),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -390,7 +396,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       ),
     );
   }
-    Widget _buildHeader() {
+
+  Widget _buildHeader() {
     return Column(
       crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -406,17 +413,19 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Des idées, des initiatives et des projets '
-          'qui méritent ton attention.',
-          style:
-              Theme.of(context).textTheme.bodyLarge,
+          'Des idées, des initiatives et des '
+          'projets qui méritent ton attention.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge,
         ),
         const SizedBox(height: 20),
         TextField(
           readOnly: true,
           onTap: () {},
           decoration: InputDecoration(
-            hintText: 'Rechercher un projet...',
+            hintText:
+                'Rechercher un projet...',
             prefixIcon: const Icon(
               Icons.search_rounded,
             ),
@@ -477,10 +486,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           Icon(
             Icons.cloud_off_rounded,
             size: 56,
-            color:
-                Theme.of(context)
-                    .colorScheme
-                    .error,
+            color: Theme.of(context)
+                .colorScheme
+                .error,
           ),
           const SizedBox(height: 16),
           Text(
@@ -515,10 +523,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           Icon(
             Icons.auto_awesome_outlined,
             size: 64,
-            color:
-                Theme.of(context)
-                    .colorScheme
-                    .primary,
+            color: Theme.of(context)
+                .colorScheme
+                .primary,
           ),
           const SizedBox(height: 18),
           Text(
@@ -530,8 +537,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Les nouveaux projets apparaîtront ici '
-            'au fur et à mesure.',
+            'Les nouveaux projets apparaîtront '
+            'ici au fur et à mesure.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -545,417 +552,6 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ProjectCard extends StatelessWidget {
-  const _ProjectCard({
-    required this.project,
-    required this.index,
-    required this.liked,
-    required this.bookmarked,
-    required this.followed,
-    required this.onLike,
-    required this.onBookmark,
-    required this.onFollow,
-  });
-
-  final Map<String, dynamic> project;
-  final int index;
-  final bool liked;
-  final bool bookmarked;
-  final bool followed;
-  final VoidCallback onLike;
-  final VoidCallback onBookmark;
-  final VoidCallback onFollow;
-
-  String _stringValue(
-    String key, [
-    String fallback = '',
-  ]) {
-    final value = project[key];
-
-    if (value == null) {
-      return fallback;
-    }
-
-    return value.toString();
-  }
-
-  int _intValue(String key) {
-    final value = project[key];
-
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
-  }
-
-  double _doubleValue(String key) {
-    final value = project[key];
-
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    return double.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final title = _stringValue(
-      'title',
-      'Projet TCHAKA',
-    );
-
-    final description = _stringValue(
-      'description',
-      'Un nouveau projet de la communauté TCHAKA.',
-    );
-
-    final imageUrl =
-        _stringValue('cover_image_url');
-
-    final category = _stringValue(
-      'category',
-      'Projet',
-    );
-
-    final likes =
-        _intValue('likes_count');
-
-    final comments =
-        _intValue('comments_count');
-
-    final matchingSkills =
-        _intValue('matching_skills_count');
-
-    final score =
-        _doubleValue('feed_score');
-
-    final creatorId =
-        _stringValue('creator_id');
-
-    final normalizedCategory =
-        category.toLowerCase();
-
-    final isTrending = likes >= 100;
-
-    final isRising =
-        likes >= 25 && likes < 100;
-
-    final isImpact =
-        normalizedCategory.contains('impact') ||
-        normalizedCategory.contains('humanitaire');
-        return Card(
-      clipBehavior: Clip.antiAlias,
-      margin:
-          const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          if (imageUrl.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (_, __, ___) {
-                      return const
-                          _ProjectImagePlaceholder();
-                    },
-                  ),
-                  Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (isTrending)
-                          const TchakaBadge(
-                            label: 'TENDANCE',
-                            icon: Icons
-                                .local_fire_department_rounded,
-                            highlight: true,
-                          ),
-                        if (isRising)
-                          const TchakaBadge(
-                            label: 'RISING',
-                            icon: Icons
-                                .rocket_launch_rounded,
-                            highlight: true,
-                          ),
-                        if (isImpact)
-                          const TchakaBadge(
-                            label: 'IMPACT',
-                            icon: Icons.public_rounded,
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  const _ProjectImagePlaceholder(),
-                  Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (isTrending)
-                          const TchakaBadge(
-                            label: 'TENDANCE',
-                            icon: Icons
-                                .local_fire_department_rounded,
-                            highlight: true,
-                          ),
-                        if (isRising)
-                          const TchakaBadge(
-                            label: 'RISING',
-                            icon: Icons
-                                .rocket_launch_rounded,
-                            highlight: true,
-                          ),
-                        if (isImpact)
-                          const TchakaBadge(
-                            label: 'IMPACT',
-                            icon: Icons.public_rounded,
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Padding(
-            padding:
-                const EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              20,
-            ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: TchakaBadge(
-                        label:
-                            category.toUpperCase(),
-                        icon:
-                            Icons.category_rounded,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: onBookmark,
-                      icon: Icon(
-                        bookmarked
-                            ? Icons
-                                .bookmark_rounded
-                            : Icons
-                                .bookmark_border_rounded,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
-                        fontWeight:
-                            FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  description,
-                  maxLines: 3,
-                  overflow:
-                      TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 18),
-                if (matchingSkills > 0) ...[
-                  Row(
-                    children: [
-                      Icon(
-                        Icons
-                            .auto_awesome_rounded,
-                        size: 16,
-                        color:
-                            Theme.of(context)
-                                .colorScheme
-                                .primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '$matchingSkills compétence'
-                          '${matchingSkills > 1 ? 's' : ''} '
-                          'correspondante'
-                          '${matchingSkills > 1 ? 's' : ''}',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                Row(
-                  children: [
-                    Icon(
-                      Icons.trending_up_rounded,
-                      size: 17,
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Score Discovery '
-                      '${score.toStringAsFixed(1)}',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                                Row(
-                  children: [
-                    Icon(
-                      liked
-                          ? Icons.favorite_rounded
-                          : Icons
-                              .favorite_border_rounded,
-                      size: 18,
-                      color: liked
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                          : null,
-                    ),
-                    const SizedBox(width: 5),
-                    Text('$likes'),
-                    const SizedBox(width: 18),
-                    const Icon(
-                      Icons
-                          .chat_bubble_outline_rounded,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 5),
-                    Text('$comments'),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child:
-                          OutlinedButton.icon(
-                        onPressed: onLike,
-                        icon: Icon(
-                          liked
-                              ? Icons
-                                  .favorite_rounded
-                              : Icons
-                                  .favorite_border_rounded,
-                        ),
-                        label: Text(
-                          liked
-                              ? 'Aimé'
-                              : 'J’aime',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: followed
-                          ? FilledButton.icon(
-                              onPressed:
-                                  creatorId.isEmpty
-                                      ? null
-                                      : onFollow,
-                              icon: const Icon(
-                                Icons.person_rounded,
-                              ),
-                              label: const Text(
-                                'Suivi',
-                              ),
-                            )
-                          : OutlinedButton.icon(
-                              onPressed:
-                                  creatorId.isEmpty
-                                      ? null
-                                      : onFollow,
-                              icon: const Icon(
-                                Icons
-                                    .person_add_alt_1_rounded,
-                              ),
-                              label: const Text(
-                                'Suivre',
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProjectImagePlaceholder
-    extends StatelessWidget {
-  const _ProjectImagePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context)
-          .colorScheme
-          .surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.rocket_launch_outlined,
-          size: 52,
-          color: Theme.of(context)
-              .colorScheme
-              .primary,
-        ),
       ),
     );
   }
@@ -1001,8 +597,7 @@ class _ProjectSkeleton
             radius: 0,
           ),
           Padding(
-            padding:
-                const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
