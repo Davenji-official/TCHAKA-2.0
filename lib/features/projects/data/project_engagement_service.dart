@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProjectEngagementService {
+  ProjectEngagementService._();
+
   static final SupabaseClient _client = Supabase.instance.client;
 
   static String? get _currentUserId {
@@ -18,9 +20,9 @@ class ProjectEngagementService {
 
     final response = await _client
         .from('project_likes')
-        .select('id')
+        .select('project_id')
         .eq('project_id', projectId)
-        .eq('user_id', userId)
+        .eq('profile_id', userId)
         .maybeSingle();
 
     return response != null;
@@ -37,9 +39,9 @@ class ProjectEngagementService {
 
     final response = await _client
         .from('project_bookmarks')
-        .select('id')
+        .select('project_id')
         .eq('project_id', projectId)
-        .eq('user_id', userId)
+        .eq('profile_id', userId)
         .maybeSingle();
 
     return response != null;
@@ -55,8 +57,8 @@ class ProjectEngagementService {
     }
 
     final response = await _client
-        .from('user_follows')
-        .select('id')
+        .from('follows')
+        .select('follower_id')
         .eq('follower_id', userId)
         .eq('following_id', creatorId)
         .maybeSingle();
@@ -74,23 +76,24 @@ class ProjectEngagementService {
 
     final existing = await _client
         .from('project_likes')
-        .select('id')
+        .select('project_id')
         .eq('project_id', projectId)
-        .eq('user_id', userId)
+        .eq('profile_id', userId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
           .from('project_likes')
           .delete()
-          .eq('id', existing['id']);
+          .eq('project_id', projectId)
+          .eq('profile_id', userId);
 
       return false;
     }
 
     await _client.from('project_likes').insert({
       'project_id': projectId,
-      'user_id': userId,
+      'profile_id': userId,
     });
 
     return true;
@@ -107,23 +110,24 @@ class ProjectEngagementService {
 
     final existing = await _client
         .from('project_bookmarks')
-        .select('id')
+        .select('project_id')
         .eq('project_id', projectId)
-        .eq('user_id', userId)
+        .eq('profile_id', userId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
           .from('project_bookmarks')
           .delete()
-          .eq('id', existing['id']);
+          .eq('project_id', projectId)
+          .eq('profile_id', userId);
 
       return false;
     }
 
     await _client.from('project_bookmarks').insert({
       'project_id': projectId,
-      'user_id': userId,
+      'profile_id': userId,
     });
 
     return true;
@@ -142,22 +146,23 @@ class ProjectEngagementService {
     }
 
     final existing = await _client
-        .from('user_follows')
-        .select('id')
+        .from('follows')
+        .select('follower_id')
         .eq('follower_id', userId)
         .eq('following_id', creatorId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
-          .from('user_follows')
+          .from('follows')
           .delete()
-          .eq('id', existing['id']);
+          .eq('follower_id', userId)
+          .eq('following_id', creatorId);
 
       return false;
     }
 
-    await _client.from('user_follows').insert({
+    await _client.from('follows').insert({
       'follower_id': userId,
       'following_id': creatorId,
     });
