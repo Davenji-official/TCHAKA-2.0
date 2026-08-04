@@ -65,6 +65,30 @@ class SkillService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  /// Récupère les compétences publiques d'un profil.
+  static Future<List<Map<String, dynamic>>> getUserSkills(
+    String profileId,
+  ) async {
+    final normalizedProfileId = profileId.trim();
+
+    if (normalizedProfileId.isEmpty) {
+      throw const FormatException(
+        'Identifiant de profil invalide.',
+      );
+    }
+
+    final response = await _client
+        .from('user_skills')
+        .select(
+          'profile_id, skill_id, proficiency, created_at, '
+          'skills(id, name, slug, category)',
+        )
+        .eq('profile_id', normalizedProfileId)
+        .order('created_at');
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   /// Ajoute une compétence au profil actuel.
   static Future<void> addSkill({
     required String skillId,
