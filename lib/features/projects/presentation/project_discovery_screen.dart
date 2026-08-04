@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+       import 'package:flutter/material.dart';
 
 import '../data/project_discovery_service.dart';
+import '../data/project_engagement_service.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
@@ -22,6 +23,11 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
   ];
 
   List<Map<String, dynamic>> _projects = [];
+
+  final Map<String, bool> _likedProjects = {};
+  final Map<String, bool> _bookmarkedProjects = {};
+  final Map<String, bool> _followedCreators = {};
+
   bool _loading = true;
   String? _error;
   int _selectedCategory = 0;
@@ -33,10 +39,12 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
   }
 
   Future<void> _loadProjects() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     try {
       final projects = await ProjectDiscoveryService.getProjectFeed();
@@ -47,6 +55,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         _projects = projects;
         _loading = false;
       });
+
+      await _loadEngagementStates(projects);
     } catch (_) {
       if (!mounted) return;
 
@@ -57,8 +67,210 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
   }
 
-  Future<void> _refresh() async {
-    await _loadProjects();
+  Future<void> _loadEngagementStates(
+    List<Map<String, dynamic>> projects,
+  ) async {
+    for (final project in projects) {
+      final projectId = _stringValue(project, 'id');
+
+      if (projectId.isEmpty) {
+        continue;
+      }
+
+      try {
+        final liked =
+            await ProjectEngagementService.isProjectLiked(projectId);
+
+        final bookmarked =
+            await ProjectEngagementService.isProjectBookmarked(projectId);
+
+        final creatorId = _stringValue(project, 'creator_id');
+
+        bool followed = false;
+
+        if (creatorId.isNotEmpty) {
+          followed =
+              await ProjectEngagementService.isFollowingCreator(creatorId);
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          _likedProjects[projectId] = liked;
+          _bookmarkedProjects[projectId] = bookmarked;
+
+          if (creatorId.isNotEmpty) {
+            _followedCreators[creatorId] = followed;
+          }
+        });
+      } catch (_) {
+        // Une erreur sur un état d'engagement ne doit pas bloquer le feed.
+      }
+    }
+  }
+
+  Future<void> _toggleLike(
+    Map<String, dynamic> project,
+  ) async {
+    final projectId = _stringValue(project, 'id');
+
+    if (projectId.isEmpty) {
+      return;
+    }
+
+    final previous = _likedProjects[projectId] ?? false;
+
+    setState(() {
+      _likedProjects[projectId] = !previous;
+    });
+
+    try {
+      final liked =
+          await ProjectEngagementService.toggleProjectLike(
+        projectId: projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _likedProjects[projectId] = liked;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _likedProjects[projectId] = previous;
+      });
+
+      _showError('Impossible de modifier le like.');
+    }
+  }
+
+  Future<void> _toggleBookmark(
+    Map<String, dynamic> project,
+  ) async {
+    final projectId = _stringValue(project, 'id');
+
+    if (projectId.isEmpty) {
+      return;
+    }
+
+    final previous = _bookmarkedProjects[projectId] ?? false;
+
+    setState(() {
+      _bookmarkedProjects[projectId] = !previous;
+    });
+
+    try {
+      final bookmarked =
+          await ProjectEngagementService.toggleProjectBookmark(
+        projectId: projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _bookmarkedProjects[projectId] = bookmarked;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _bookmarkedProjects[projectId] = previous;
+      });
+
+      _showError('Impossible d’enregistrer ce projet.');
+    }
+  }
+
+  Future<void> _toggleFollow(
+    Map<String, dynamic> project,
+  ) async {
+    final creatorId = _stringValue(project, 'creator_id');
+
+    if (creatorId.isEmpty) {
+      return;
+    }
+
+    final previous = _followedCreators[creatorId] ?? false;
+
+    setState(() {
+      _followedCreators[creatorId] = !previous;
+    });
+
+    try {
+      final followed =
+          await ProjectEngagementService.toggleCreatorFollow(
+        creatorId: creatorId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _followedCreators[creatorId] = followed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _followedCreators[creatorId] = previous;
+      });
+
+      _showError('Impossible de modifier le suivi.');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _stringValue(
+    Map<String, dynamic> map,
+    String key, [
+    String fallback = '',
+  ]) {
+    final value = map[key];
+
+    if (value == null) {
+      return fallback;
+    }
+
+    return value.toString();
+  }
+
+  int _intValue(
+    Map<String, dynamic> map,
+    String key,
+  ) {
+    final value = map[key];
+
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  double _doubleValue(
+    Map<String, dynamic> map,
+    String key,
+  ) {
+    final value = map[key];
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   @override
@@ -75,7 +287,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _refresh,
+        onRefresh: _loadProjects,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -117,6 +329,23 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                     return _ProjectCard(
                       project: _projects[index],
                       index: index,
+                      liked: _likedProjects[
+                            _stringValue(_projects[index], 'id'),
+                          ] ??
+                          false,
+                      bookmarked: _bookmarkedProjects[
+                            _stringValue(_projects[index], 'id'),
+                          ] ??
+                          false,
+                      followed: _followedCreators[
+                            _stringValue(_projects[index], 'creator_id'),
+                          ] ??
+                          false,
+                      onLike: () => _toggleLike(_projects[index]),
+                      onBookmark: () =>
+                          _toggleBookmark(_projects[index]),
+                      onFollow: () =>
+                          _toggleFollow(_projects[index]),
                     );
                   },
                 ),
@@ -149,7 +378,10 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           decoration: InputDecoration(
             hintText: 'Rechercher un projet...',
             prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: const Icon(Icons.tune_rounded),
+            suffixIcon: IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.tune_rounded),
+            ),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
@@ -253,12 +485,29 @@ class _ProjectCard extends StatelessWidget {
   const _ProjectCard({
     required this.project,
     required this.index,
+    required this.liked,
+    required this.bookmarked,
+    required this.followed,
+    required this.onLike,
+    required this.onBookmark,
+    required this.onFollow,
   });
 
   final Map<String, dynamic> project;
   final int index;
 
-  String _stringValue(String key, [String fallback = '']) {
+  final bool liked;
+  final bool bookmarked;
+  final bool followed;
+
+  final VoidCallback onLike;
+  final VoidCallback onBookmark;
+  final VoidCallback onFollow;
+
+  String _stringValue(
+    String key, [
+    String fallback = '',
+  ]) {
     final value = project[key];
 
     if (value == null) {
@@ -273,6 +522,10 @@ class _ProjectCard extends StatelessWidget {
 
     if (value is int) {
       return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
     }
 
     return int.tryParse(value?.toString() ?? '') ?? 0;
@@ -292,7 +545,7 @@ class _ProjectCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = _stringValue(
       'title',
-      _stringValue('name', 'Projet TCHAKA'),
+      'Projet TCHAKA',
     );
 
     final description = _stringValue(
@@ -301,8 +554,7 @@ class _ProjectCard extends StatelessWidget {
     );
 
     final imageUrl = _stringValue(
-      'cover_url',
-      _stringValue('image_url'),
+      'cover_image_url',
     );
 
     final category = _stringValue(
@@ -312,10 +564,11 @@ class _ProjectCard extends StatelessWidget {
 
     final likes = _intValue('likes_count');
     final comments = _intValue('comments_count');
-    final followers = _intValue('followers_count');
+    final matchingSkills = _intValue('matching_skills_count');
 
-    final rawScore = _doubleValue('feed_score');
-    final progress = rawScore.clamp(0.0, 100.0) / 100.0;
+    final score = _doubleValue('feed_score');
+
+    final creatorId = _stringValue('creator_id');
 
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 350 + (index * 80)),
@@ -377,9 +630,25 @@ class _ProjectCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       IconButton(
-                        tooltip: 'Enregistrer',
-                        onPressed: () {},
-                        icon: const Icon(Icons.bookmark_border_rounded),
+                        tooltip: bookmarked
+                            ? 'Retirer des favoris'
+                            : 'Enregistrer',
+                        onPressed: onBookmark,
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                              scale: animation,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            bookmarked
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            key: ValueKey(bookmarked),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -398,34 +667,53 @@ class _ProjectCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 18),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
-                      value: progress > 0 ? progress : null,
-                      minHeight: 7,
+                  if (matchingSkills > 0) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$matchingSkills compétence'
+                          '${matchingSkills > 1 ? 's' : ''} correspondante'
+                          '${matchingSkills > 1 ? 's' : ''}',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 10),
+                  ],
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.trending_up_rounded,
+                        size: 17,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Score Discovery ${score.toStringAsFixed(1)}',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Score Discovery : ${rawScore.toStringAsFixed(1)}',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   Row(
                     children: [
                       _StatItem(
-                        icon: Icons.favorite_border_rounded,
+                        icon: liked
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
                         value: likes,
+                        emphasized: liked,
                       ),
                       const SizedBox(width: 16),
                       _StatItem(
                         icon: Icons.chat_bubble_outline_rounded,
                         value: comments,
-                      ),
-                      const SizedBox(width: 16),
-                      _StatItem(
-                        icon: Icons.people_outline_rounded,
-                        value: followers,
                       ),
                     ],
                   ),
@@ -433,18 +721,27 @@ class _ProjectCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.favorite_border_rounded),
-                          label: const Text('J’aime'),
+                        child: _AnimatedActionButton(
+                          active: liked,
+                          icon: liked
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          label: liked ? 'Aimé' : 'J’aime',
+                          onPressed: onLike,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.person_add_alt_1_rounded),
-                          label: const Text('Suivre'),
+                        child: _AnimatedActionButton(
+                          active: followed,
+                          icon: followed
+                              ? Icons.person_rounded
+                              : Icons.person_add_alt_1_rounded,
+                          label: followed ? 'Suivi' : 'Suivre',
+                          filled: followed,
+                          onPressed: creatorId.isEmpty
+                              ? null
+                              : onFollow,
                         ),
                       ),
                     ],
@@ -459,14 +756,75 @@ class _ProjectCard extends StatelessWidget {
   }
 }
 
+class _AnimatedActionButton extends StatelessWidget {
+  const _AnimatedActionButton({
+    required this.active,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.filled = false,
+  });
+
+  final bool active;
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: active ? 1.0 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      child: filled
+          ? FilledButton.icon(
+              onPressed: onPressed,
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: Icon(
+                  icon,
+                  key: ValueKey(icon),
+                ),
+              ),
+              label: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: Text(
+                  label,
+                  key: ValueKey(label),
+                ),
+              ),
+            )
+          : OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: Icon(
+                  icon,
+                  key: ValueKey(icon),
+                ),
+              ),
+              label: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: Text(
+                  label,
+                  key: ValueKey(label),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
 class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
     required this.value,
+    this.emphasized = false,
   });
 
   final IconData icon;
   final int value;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
@@ -476,6 +834,9 @@ class _StatItem extends StatelessWidget {
         Icon(
           icon,
           size: 18,
+          color: emphasized
+              ? Theme.of(context).colorScheme.primary
+              : null,
         ),
         const SizedBox(width: 5),
         Text(
@@ -569,3 +930,4 @@ class _ProjectSkeleton extends StatelessWidget {
     );
   }
 }
+                               
