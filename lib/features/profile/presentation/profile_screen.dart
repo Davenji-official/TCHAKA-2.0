@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'skills_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../projects/data/project_engagement_service.dart';
+import '../data/skill_service.dart';
+import 'skills_screen.dart';
+
 class PublicProfileScreen extends StatefulWidget {
   const PublicProfileScreen({
     super.key,
@@ -12,24 +14,29 @@ class PublicProfileScreen extends StatefulWidget {
   final String? userId;
 
   @override
-  State<PublicProfileScreen> createState() => _PublicProfileScreenState();
+  State<PublicProfileScreen> createState() =>
+      _PublicProfileScreenState();
 }
 
 class _PublicProfileScreenState extends State<PublicProfileScreen> {
   final SupabaseClient _client = Supabase.instance.client;
 
   Map<String, dynamic>? _profile;
+  List<Map<String, dynamic>> _skills = [];
 
   bool _loading = true;
+  bool _skillsLoading = true;
   bool _following = false;
   bool _followLoading = false;
 
   String? _error;
 
-  String? get _profileId => widget.userId ?? _client.auth.currentUser?.id;
+  String? get _profileId =>
+      widget.userId ?? _client.auth.currentUser?.id;
 
   bool get _isOwnProfile {
     final currentUserId = _client.auth.currentUser?.id;
+
     return currentUserId != null &&
         _profileId != null &&
         currentUserId == _profileId;
@@ -44,6 +51,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Future<void> _loadProfile() async {
     setState(() {
       _loading = true;
+      _skillsLoading = true;
       _error = null;
     });
 
@@ -65,7 +73,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       if (response == null) {
         setState(() {
           _profile = null;
+          _skills = [];
           _loading = false;
+          _skillsLoading = false;
         });
         return;
       }
@@ -73,7 +83,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       var following = false;
 
       if (!_isOwnProfile) {
-        following = await ProjectEngagementService.isFollowingCreator(
+        following =
+            await ProjectEngagementService.isFollowingCreator(
           profileId,
         );
       }
@@ -85,20 +96,49 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _following = following;
         _loading = false;
       });
+
+      await _loadSkills(profileId);
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
         _loading = false;
+        _skillsLoading = false;
         _error = 'Impossible de charger ce profil.';
       });
     }
   }
 
-  Future<void> _toggleFollow() async {
+  Future<void> _loadSkills(String profileId) async {
+    setState(() {
+      _skillsLoading = true;
+    });
+
+    try {
+      final skills =
+          await SkillService.getUserSkills(profileId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _skills = skills;
+        _skillsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _skills = [];
+        _skillsLoading = false;
+      });
+    }
+  }
+    Future<void> _toggleFollow() async {
     final profileId = _profileId;
 
-    if (profileId == null || _isOwnProfile || _followLoading) {
+    if (profileId == null ||
+        _isOwnProfile ||
+        _followLoading) {
       return;
     }
 
@@ -107,7 +147,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     });
 
     try {
-      final following = await ProjectEngagementService.toggleCreatorFollow(
+      final following =
+          await ProjectEngagementService.toggleCreatorFollow(
         creatorId: profileId,
       );
 
@@ -126,11 +167,67 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible de modifier le suivi.'),
+          content: Text(
+            'Impossible de modifier le suivi.',
+          ),
         ),
       );
     }
   }
+
+  Future<void> _openSkills() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SkillsScreen(),
+      ),
+    );
+
+    if (!mounted) return;
+
+    final profileId = _profileId;
+
+    if (profileId != null) {
+      await _loadSkills(profileId);
+    }
+  }
+
+  String _skillName(Map<String, dynamic> skill) {
+    final data = skill['skills'];
+
+    if (data is Map<String, dynamic>) {
+      return data['name']?.toString() ?? 'Compétence';
+    }
+
+    return 'Compétence';
+  }
+
+  String? _skillCategory(Map<String, dynamic> skill) {
+    final data = skill['skills'];
+
+    if (data is Map<String, dynamic>) {
+      final category = data['category']?.toString();
+
+      if (category != null &&
+          category.trim().isNotEmpty) {
+        return category;
+      }
+    }
+
+    return null;
+  }
+
+  int _skillProficiency(
+    Map<String, dynamic> skill,
+  ) {
+    final value = skill['proficiency'];
+
+    if (value is num) {
+      return value.clamp(1, 5).toInt();
+    }
+
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,7 +247,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   Widget _buildLoading() {
     return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics:
+          const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 24),
@@ -174,32 +272,40 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
-  Widget _loadingLine({required double width}) {
+  Widget _loadingLine({
+    required double width,
+  }) {
     return Center(
       child: Container(
         width: width,
         height: 16,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
       ),
     );
   }
 
-  Widget _loadingBox({required double height}) {
+  Widget _loadingBox({
+    required double height,
+  }) {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
       ),
     );
   }
-
-  Widget _buildError() {
+    Widget _buildError() {
     return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics:
+          const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 120),
@@ -231,7 +337,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     if (profile == null) {
       return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics:
+            const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: const [
           SizedBox(height: 120),
@@ -254,49 +361,61 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final bio = profile['bio'] as String?;
     final country = profile['country'] as String?;
     final city = profile['city'] as String?;
-    final isVerified = profile['is_verified'] == true;
-    final isPremium = profile['is_premium'] == true;
+    final isVerified =
+        profile['is_verified'] == true;
+    final isPremium =
+        profile['is_premium'] == true;
 
-    final displayName = fullName?.trim().isNotEmpty == true
-        ? fullName!
-        : 'Utilisateur TCHAKA';
+    final displayName =
+        fullName?.trim().isNotEmpty == true
+            ? fullName!
+            : 'Utilisateur TCHAKA';
 
     final hasLocation =
         country?.trim().isNotEmpty == true ||
         city?.trim().isNotEmpty == true;
 
     final location = [
-      if (country?.trim().isNotEmpty == true) country!,
-      if (city?.trim().isNotEmpty == true) city!,
+      if (country?.trim().isNotEmpty == true)
+        country!,
+      if (city?.trim().isNotEmpty == true)
+        city!,
     ].join(' · ');
 
     return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+      physics:
+          const AlwaysScrollableScrollPhysics(),
+      padding:
+          const EdgeInsets.fromLTRB(24, 24, 24, 40),
       children: [
         Center(
           child: CircleAvatar(
             radius: 58,
-            backgroundImage: avatarUrl?.trim().isNotEmpty == true
-                ? NetworkImage(avatarUrl!)
-                : null,
-            child: avatarUrl?.trim().isNotEmpty != true
-                ? const Icon(
-                    Icons.person_outline,
-                    size: 52,
-                  )
-                : null,
+            backgroundImage:
+                avatarUrl?.trim().isNotEmpty == true
+                    ? NetworkImage(avatarUrl!)
+                    : null,
+            child:
+                avatarUrl?.trim().isNotEmpty != true
+                    ? const Icon(
+                        Icons.person_outline,
+                        size: 52,
+                      )
+                    : null,
           ),
         ),
         const SizedBox(height: 20),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Flexible(
               child: Text(
                 displayName,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall,
               ),
             ),
             if (isVerified) ...[
@@ -304,7 +423,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               Icon(
                 Icons.verified,
                 size: 21,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary,
               ),
             ],
             if (isPremium) ...[
@@ -312,7 +433,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               Icon(
                 Icons.workspace_premium,
                 size: 21,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary,
               ),
             ],
           ],
@@ -322,7 +445,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           Text(
             '@${username!.trim()}',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium,
           ),
         ],
         if (bio?.trim().isNotEmpty == true) ...[
@@ -330,13 +455,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           Text(
             bio!,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge,
           ),
         ],
         if (hasLocation) ...[
           const SizedBox(height: 14),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               const Icon(
                 Icons.location_on_outlined,
@@ -358,22 +486,29 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: _followLoading ? null : _toggleFollow,
+                  onPressed: _followLoading
+                      ? null
+                      : _toggleFollow,
                   icon: _followLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(
+                          child:
+                              CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
                       : Icon(
                           _following
-                              ? Icons.person_remove_alt_1
-                              : Icons.person_add_alt_1,
+                              ? Icons
+                                  .person_remove_alt_1
+                              : Icons
+                                  .person_add_alt_1,
                         ),
                   label: Text(
-                    _following ? 'Ne plus suivre' : 'Suivre',
+                    _following
+                        ? 'Ne plus suivre'
+                        : 'Suivre',
                   ),
                 ),
               ),
@@ -381,7 +516,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.share_outlined),
+                  icon: const Icon(
+                    Icons.share_outlined,
+                  ),
                   label: const Text('Partager'),
                 ),
               ),
@@ -393,65 +530,29 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             Expanded(
               child: Text(
                 'Compétences',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge,
               ),
             ),
-            TextButton.icon(
-              onPressed: _isOwnProfile
-                  ? () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SkillsScreen(),
-                        ),
-                      );
-
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    }
-                  : null,
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Gérer'),
-            ),
+            if (_isOwnProfile)
+              TextButton.icon(
+                onPressed: _openSkills,
+                icon: const Icon(
+                  Icons.edit_outlined,
+                ),
+                label: const Text('Gérer'),
+              ),
           ],
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              child: Icon(
-                Icons.psychology_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            title: const Text(
-              'Mes compétences',
-            ),
-            subtitle: const Text(
-              'Ajoute tes compétences et ton niveau de maîtrise.',
-            ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
-            onTap: _isOwnProfile
-                ? () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SkillsScreen(),
-                      ),
-                    );
-
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }
-                : null,
-          ),
-        ),
+        const SizedBox(height: 10),
+        _buildSkillsSection(),
         const SizedBox(height: 36),
         Text(
           'Publications',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge,
         ),
         const SizedBox(height: 12),
         Card(
@@ -462,17 +563,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 Icon(
                   Icons.auto_awesome_outlined,
                   size: 42,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Les publications arrivent bientôt.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium,
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Les créations de cet utilisateur apparaîtront ici.',
+                  'Les créations de cet utilisateur '
+                  'apparaîtront ici.',
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -480,6 +586,136 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSkillsSection() {
+    if (_skillsLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (_skills.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(
+                Icons.psychology_outlined,
+                size: 40,
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _isOwnProfile
+                    ? 'Aucune compétence ajoutée.'
+                    : 'Aucune compétence renseignée.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium,
+              ),
+              if (_isOwnProfile) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  'Ajoute tes compétences pour améliorer '
+                  'tes recommandations TCHAKA.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _openSkills,
+                  icon: const Icon(Icons.add),
+                  label: const Text(
+                    'Ajouter une compétence',
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding:
+            const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          children:
+              _skills.map(_buildSkillRow).toList(),
+        ),
+      ),
+    );
+  }
+    Widget _buildSkillRow(
+    Map<String, dynamic> skill,
+  ) {
+    final name = _skillName(skill);
+    final category = _skillCategory(skill);
+    final proficiency =
+        _skillProficiency(skill);
+
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            child: Text(
+              name.isNotEmpty
+                  ? name[0].toUpperCase()
+                  : '?',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium,
+                ),
+                if (category != null)
+                  Text(
+                    category,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize:
+                MainAxisSize.min,
+            children: List.generate(
+              5,
+              (index) => Icon(
+                index < proficiency
+                    ? Icons.star
+                    : Icons.star_border,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
