@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/animations/tchaka_entrance.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
-import '../../../core/widgets/tchaka_entrance.dart';
-import '../../../core/widgets/tchaka_project_card.dart';
+import 'widgets/tchaka_project_card.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
