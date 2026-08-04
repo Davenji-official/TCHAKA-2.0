@@ -1,175 +1,167 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProjectEngagementService {
-  ProjectEngagementService._();
-
   static final SupabaseClient _client = Supabase.instance.client;
 
-  static String get _userId {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw const AuthException('Utilisateur non connecté.');
-    }
-
-    return user.id;
+  static String? get _currentUserId {
+    return _client.auth.currentUser?.id;
   }
 
-  static Future<bool> isProjectLiked(String projectId) async {
+  static Future<bool> isProjectLiked(
+    String projectId,
+  ) async {
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      return false;
+    }
+
     final response = await _client
         .from('project_likes')
-        .select('project_id')
+        .select('id')
         .eq('project_id', projectId)
-        .eq('profile_id', _userId)
+        .eq('user_id', userId)
         .maybeSingle();
 
     return response != null;
   }
 
-  static Future<bool> toggleProjectLike({
+  static Future<bool> isProjectBookmarked(
+    String projectId,
+  ) async {
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      return false;
+    }
+
+    final response = await _client
+        .from('project_bookmarks')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    return response != null;
+  }
+
+  static Future<bool> isFollowingCreator(
+    String creatorId,
+  ) async {
+    final userId = _currentUserId;
+
+    if (userId == null || userId == creatorId) {
+      return false;
+    }
+
+    final response = await _client
+        .from('user_follows')
+        .select('id')
+        .eq('follower_id', userId)
+        .eq('following_id', creatorId)
+        .maybeSingle();
+
+    return response != null;
+  }
+    static Future<bool> toggleProjectLike({
     required String projectId,
   }) async {
-    final userId = _userId;
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      throw Exception('Utilisateur non connecté.');
+    }
 
     final existing = await _client
         .from('project_likes')
-        .select('project_id')
+        .select('id')
         .eq('project_id', projectId)
-        .eq('profile_id', userId)
+        .eq('user_id', userId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
           .from('project_likes')
           .delete()
-          .eq('project_id', projectId)
-          .eq('profile_id', userId);
+          .eq('id', existing['id']);
 
       return false;
     }
 
     await _client.from('project_likes').insert({
       'project_id': projectId,
-      'profile_id': userId,
+      'user_id': userId,
     });
 
     return true;
   }
 
-  static Future<bool> isProjectBookmarked(String projectId) async {
-    final response = await _client
-        .from('project_bookmarks')
-        .select('project_id')
-        .eq('project_id', projectId)
-        .eq('profile_id', _userId)
-        .maybeSingle();
-
-    return response != null;
-  }
-
   static Future<bool> toggleProjectBookmark({
     required String projectId,
   }) async {
-    final userId = _userId;
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      throw Exception('Utilisateur non connecté.');
+    }
 
     final existing = await _client
         .from('project_bookmarks')
-        .select('project_id')
+        .select('id')
         .eq('project_id', projectId)
-        .eq('profile_id', userId)
+        .eq('user_id', userId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
           .from('project_bookmarks')
           .delete()
-          .eq('project_id', projectId)
-          .eq('profile_id', userId);
+          .eq('id', existing['id']);
 
       return false;
     }
 
     await _client.from('project_bookmarks').insert({
       'project_id': projectId,
-      'profile_id': userId,
+      'user_id': userId,
     });
 
     return true;
   }
-
-  static Future<bool> isFollowingCreator(String creatorId) async {
-    final response = await _client
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', _userId)
-        .eq('following_id', creatorId)
-        .maybeSingle();
-
-    return response != null;
-  }
-
-  static Future<bool> toggleCreatorFollow({
+    static Future<bool> toggleCreatorFollow({
     required String creatorId,
   }) async {
-    final userId = _userId;
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      throw Exception('Utilisateur non connecté.');
+    }
 
     if (userId == creatorId) {
-      throw const PostgrestException(
-        message: 'Impossible de se suivre soi-même.',
-      );
+      throw Exception('Impossible de se suivre soi-même.');
     }
 
     final existing = await _client
-        .from('follows')
-        .select('following_id')
+        .from('user_follows')
+        .select('id')
         .eq('follower_id', userId)
         .eq('following_id', creatorId)
         .maybeSingle();
 
     if (existing != null) {
       await _client
-          .from('follows')
+          .from('user_follows')
           .delete()
-          .eq('follower_id', userId)
-          .eq('following_id', creatorId);
+          .eq('id', existing['id']);
 
       return false;
     }
 
-    await _client.from('follows').insert({
+    await _client.from('user_follows').insert({
       'follower_id': userId,
       'following_id': creatorId,
     });
 
     return true;
-  }
-
-  static Future<Map<String, dynamic>?> getProjectStats({
-    required String projectId,
-  }) async {
-    final response = await _client.rpc(
-      'get_project_stats',
-      params: {
-        'p_project_id': projectId,
-      },
-    );
-
-    if (response == null) {
-      return null;
-    }
-
-    if (response is List) {
-      if (response.isEmpty) {
-        return null;
-      }
-
-      return Map<String, dynamic>.from(
-        response.first as Map,
-      );
-    }
-
-    return Map<String, dynamic>.from(
-      response as Map,
-    );
   }
 }
