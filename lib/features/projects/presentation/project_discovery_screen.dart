@@ -1,4 +1,4 @@
-       import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
@@ -104,12 +104,11 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           }
         });
       } catch (_) {
-        // Une erreur sur un état d'engagement ne doit pas bloquer le feed.
+        // Une erreur d'engagement ne doit pas bloquer le feed.
       }
     }
   }
-
-  Future<void> _toggleLike(
+     Future<void> _toggleLike(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(project, 'id');
@@ -241,39 +240,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
 
     return value.toString();
-  }
-
-  int _intValue(
-    Map<String, dynamic> map,
-    String key,
-  ) {
-    final value = map[key];
-
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  double _doubleValue(
-    Map<String, dynamic> map,
-    String key,
-  ) {
-    final value = map[key];
-
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  @override
+  } 
+         @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -326,26 +294,22 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                 sliver: SliverList.builder(
                   itemCount: _projects.length,
                   itemBuilder: (context, index) {
+                    final project = _projects[index];
+                    final projectId = _stringValue(project, 'id');
+                    final creatorId =
+                        _stringValue(project, 'creator_id');
+
                     return _ProjectCard(
-                      project: _projects[index],
+                      project: project,
                       index: index,
-                      liked: _likedProjects[
-                            _stringValue(_projects[index], 'id'),
-                          ] ??
-                          false,
-                      bookmarked: _bookmarkedProjects[
-                            _stringValue(_projects[index], 'id'),
-                          ] ??
-                          false,
-                      followed: _followedCreators[
-                            _stringValue(_projects[index], 'creator_id'),
-                          ] ??
-                          false,
-                      onLike: () => _toggleLike(_projects[index]),
-                      onBookmark: () =>
-                          _toggleBookmark(_projects[index]),
-                      onFollow: () =>
-                          _toggleFollow(_projects[index]),
+                      liked: _likedProjects[projectId] ?? false,
+                      bookmarked:
+                          _bookmarkedProjects[projectId] ?? false,
+                      followed:
+                          _followedCreators[creatorId] ?? false,
+                      onLike: () => _toggleLike(project),
+                      onBookmark: () => _toggleBookmark(project),
+                      onFollow: () => _toggleFollow(project),
                     );
                   },
                 ),
@@ -495,11 +459,9 @@ class _ProjectCard extends StatelessWidget {
 
   final Map<String, dynamic> project;
   final int index;
-
   final bool liked;
   final bool bookmarked;
   final bool followed;
-
   final VoidCallback onLike;
   final VoidCallback onBookmark;
   final VoidCallback onFollow;
@@ -540,8 +502,7 @@ class _ProjectCard extends StatelessWidget {
 
     return double.tryParse(value?.toString() ?? '') ?? 0;
   }
-
-  @override
+         @override
   Widget build(BuildContext context) {
     final title = _stringValue(
       'title',
@@ -553,9 +514,7 @@ class _ProjectCard extends StatelessWidget {
       'Un nouveau projet de la communauté TCHAKA.',
     );
 
-    final imageUrl = _stringValue(
-      'cover_image_url',
-    );
+    final imageUrl = _stringValue('cover_image_url');
 
     final category = _stringValue(
       'category',
@@ -565,285 +524,181 @@ class _ProjectCard extends StatelessWidget {
     final likes = _intValue('likes_count');
     final comments = _intValue('comments_count');
     final matchingSkills = _intValue('matching_skills_count');
-
     final score = _doubleValue('feed_score');
 
     final creatorId = _stringValue('creator_id');
 
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 350 + (index * 80)),
-      tween: Tween(begin: 0, end: 1),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        margin: const EdgeInsets.only(bottom: 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (imageUrl.isNotEmpty)
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return const _ProjectImagePlaceholder();
-                  },
-                ),
-              )
-            else
-              const AspectRatio(
-                aspectRatio: 16 / 9,
-                child: _ProjectImagePlaceholder(),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (imageUrl.isNotEmpty)
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return const _ProjectImagePlaceholder();
+                },
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            )
+          else
+            const AspectRatio(
+              aspectRatio: 16 / 9,
+              child: _ProjectImagePlaceholder(),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer,
+                      ),
+                      child: Text(
+                        category,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: onBookmark,
+                      icon: Icon(
+                        bookmarked
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 18),
+                if (matchingSkills > 0) ...[
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer,
-                        ),
-                        child: Text(
-                          category,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 16,
+                        color:
+                            Theme.of(context).colorScheme.primary,
                       ),
-                      const Spacer(),
-                      IconButton(
-                        tooltip: bookmarked
-                            ? 'Retirer des favoris'
-                            : 'Enregistrer',
-                        onPressed: onBookmark,
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          transitionBuilder: (child, animation) {
-                            return ScaleTransition(
-                              scale: animation,
-                              child: child,
-                            );
-                          },
-                          child: Icon(
-                            bookmarked
-                                ? Icons.bookmark_rounded
-                                : Icons.bookmark_border_rounded,
-                            key: ValueKey(bookmarked),
-                          ),
-                        ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$matchingSkills compétence'
+                        '${matchingSkills > 1 ? 's' : ''} correspondante'
+                        '${matchingSkills > 1 ? 's' : ''}',
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 18),
-                  if (matchingSkills > 0) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$matchingSkills compétence'
-                          '${matchingSkills > 1 ? 's' : ''} correspondante'
-                          '${matchingSkills > 1 ? 's' : ''}',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      ],
+                ],
+                Row(
+                  children: [
+                    Icon(
+                      Icons.trending_up_rounded,
+                      size: 17,
+                      color:
+                          Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Score Discovery ${score.toStringAsFixed(1)}',
+                    ),
                   ],
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.trending_up_rounded,
-                        size: 17,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Score Discovery ${score.toStringAsFixed(1)}',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      _StatItem(
-                        icon: liked
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        value: likes,
-                        emphasized: liked,
-                      ),
-                      const SizedBox(width: 16),
-                      _StatItem(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        value: comments,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _AnimatedActionButton(
-                          active: liked,
-                          icon: liked
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Icon(
+                      liked
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      size: 18,
+                      color: liked
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    const SizedBox(width: 5),
+                    Text('$likes'),
+                    const SizedBox(width: 18),
+                    const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 5),
+                    Text('$comments'),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onLike,
+                        icon: Icon(
+                          liked
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
-                          label: liked ? 'Aimé' : 'J’aime',
-                          onPressed: onLike,
+                        ),
+                        label: Text(
+                          liked ? 'Aimé' : 'J’aime',
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _AnimatedActionButton(
-                          active: followed,
-                          icon: followed
-                              ? Icons.person_rounded
-                              : Icons.person_add_alt_1_rounded,
-                          label: followed ? 'Suivi' : 'Suivre',
-                          filled: followed,
-                          onPressed: creatorId.isEmpty
-                              ? null
-                              : onFollow,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: followed
+                          ? FilledButton.icon(
+                              onPressed: creatorId.isEmpty
+                                  ? null
+                                  : onFollow,
+                              icon: const Icon(
+                                Icons.person_rounded,
+                              ),
+                              label: const Text('Suivi'),
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: creatorId.isEmpty
+                                  ? null
+                                  : onFollow,
+                              icon: const Icon(
+                                Icons.person_add_alt_1_rounded,
+                              ),
+                              label: const Text('Suivre'),
+                            ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-class _AnimatedActionButton extends StatelessWidget {
-  const _AnimatedActionButton({
-    required this.active,
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.filled = false,
-  });
-
-  final bool active;
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: active ? 1.0 : 1.0,
-      duration: const Duration(milliseconds: 120),
-      child: filled
-          ? FilledButton.icon(
-              onPressed: onPressed,
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Icon(
-                  icon,
-                  key: ValueKey(icon),
-                ),
-              ),
-              label: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Text(
-                  label,
-                  key: ValueKey(label),
-                ),
-              ),
-            )
-          : OutlinedButton.icon(
-              onPressed: onPressed,
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Icon(
-                  icon,
-                  key: ValueKey(icon),
-                ),
-              ),
-              label: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Text(
-                  label,
-                  key: ValueKey(label),
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.icon,
-    required this.value,
-    this.emphasized = false,
-  });
-
-  final IconData icon;
-  final int value;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: emphasized
-              ? Theme.of(context).colorScheme.primary
-              : null,
-        ),
-        const SizedBox(width: 5),
-        Text(
-          value.toString(),
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-      ],
     );
   }
 }
@@ -854,7 +709,9 @@ class _ProjectImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest,
       child: Center(
         child: Icon(
           Icons.rocket_launch_outlined,
@@ -871,8 +728,9 @@ class _ProjectSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        Theme.of(context).colorScheme.surfaceContainerHighest;
+    final color = Theme.of(context)
+        .colorScheme
+        .surfaceContainerHighest;
 
     Widget box({
       required double height,
@@ -913,8 +771,6 @@ class _ProjectSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 box(height: 16, width: 250),
                 const SizedBox(height: 20),
-                box(height: 8, width: double.infinity),
-                const SizedBox(height: 20),
                 Row(
                   children: [
                     box(height: 34, width: 90),
@@ -930,4 +786,3 @@ class _ProjectSkeleton extends StatelessWidget {
     );
   }
 }
-                               
