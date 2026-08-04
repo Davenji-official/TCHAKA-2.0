@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/animations/tchaka_entrance.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
-import 'widgets/tchaka_project_card.dart';
+import '../../../core/widgets/tchaka_entrance.dart';
+import '../../../core/widgets/tchaka_project_card.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
@@ -14,7 +14,18 @@ class ProjectDiscoveryScreen extends StatefulWidget {
       _ProjectDiscoveryScreenState();
 }
 
-class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
+class _ProjectDiscoveryScreenState
+    extends State<ProjectDiscoveryScreen> {
+  final List<String> _categories = const [
+    'Pour toi',
+    '🔥 Tendance',
+    '🚀 Rising',
+    '❤️ Populaires',
+    '👥 Plus suivis',
+    '🌍 Impact',
+    '📍 Près de toi',
+  ];
+
   final List<ProjectDiscoveryFilter> _filters =
       ProjectDiscoveryFilter.values;
 
@@ -26,9 +37,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
   bool _loading = true;
   String? _error;
-
-  ProjectDiscoveryFilter _selectedFilter =
-      ProjectDiscoveryFilter.forYou;
+  int _selectedCategory = 0;
 
   @override
   void initState() {
@@ -36,7 +45,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     _loadProjects();
   }
 
-  Future<void> _loadProjects() async {
+  Future<void> _loadProjects({
+    ProjectDiscoveryFilter? filter,
+  }) async {
     if (mounted) {
       setState(() {
         _loading = true;
@@ -45,10 +56,11 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
 
     try {
-      final projects =
-          await ProjectDiscoveryService.getProjectsForFilter(
-        filter: _selectedFilter,
-      );
+      final projects = filter == null
+          ? await ProjectDiscoveryService.getProjectFeed()
+          : await ProjectDiscoveryService.getProjectsForFilter(
+              filter: filter,
+            );
 
       if (!mounted) return;
 
@@ -72,7 +84,10 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     List<Map<String, dynamic>> projects,
   ) async {
     for (final project in projects) {
-      final projectId = _stringValue(project, 'id');
+      final projectId = _stringValue(
+        project,
+        'id',
+      );
 
       if (projectId.isEmpty) {
         continue;
@@ -89,8 +104,10 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           projectId,
         );
 
-        final creatorId =
-            _stringValue(project, 'creator_id');
+        final creatorId = _stringValue(
+          project,
+          'creator_id',
+        );
 
         bool followed = false;
 
@@ -117,24 +134,13 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
   }
 
-  Future<void> _selectFilter(
-    ProjectDiscoveryFilter filter,
-  ) async {
-    if (_selectedFilter == filter) {
-      return;
-    }
-
-    setState(() {
-      _selectedFilter = filter;
-    });
-
-    await _loadProjects();
-  }
-
   Future<void> _toggleLike(
     Map<String, dynamic> project,
   ) async {
-    final projectId = _stringValue(project, 'id');
+    final projectId = _stringValue(
+      project,
+      'id',
+    );
 
     if (projectId.isEmpty) {
       return;
@@ -170,11 +176,13 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       );
     }
   }
-
-  Future<void> _toggleBookmark(
+    Future<void> _toggleBookmark(
     Map<String, dynamic> project,
   ) async {
-    final projectId = _stringValue(project, 'id');
+    final projectId = _stringValue(
+      project,
+      'id',
+    );
 
     if (projectId.isEmpty) {
       return;
@@ -189,8 +197,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     try {
       final bookmarked =
-          await ProjectEngagementService
-              .toggleProjectBookmark(
+          await ProjectEngagementService.toggleProjectBookmark(
         projectId: projectId,
       );
 
@@ -215,8 +222,10 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
   Future<void> _toggleFollow(
     Map<String, dynamic> project,
   ) async {
-    final creatorId =
-        _stringValue(project, 'creator_id');
+    final creatorId = _stringValue(
+      project,
+      'creator_id',
+    );
 
     if (creatorId.isEmpty) {
       return;
@@ -231,8 +240,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     try {
       final followed =
-          await ProjectEngagementService
-              .toggleCreatorFollow(
+          await ProjectEngagementService.toggleCreatorFollow(
         creatorId: creatorId,
       );
 
@@ -276,7 +284,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     return value.toString();
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -292,10 +301,11 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadProjects,
+        onRefresh: () => _loadProjects(
+          filter: _filters[_selectedCategory],
+        ),
         child: CustomScrollView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -309,7 +319,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
               ),
             ),
             SliverToBoxAdapter(
-              child: _buildFilters(),
+              child: _buildCategories(),
             ),
             if (_loading)
               SliverPadding(
@@ -322,7 +332,12 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                 sliver: SliverList.builder(
                   itemCount: 4,
                   itemBuilder: (context, index) {
-                    return const _ProjectSkeleton();
+                    return TchakaEntrance(
+                      delay: Duration(
+                        milliseconds: 70 * index,
+                      ),
+                      child: const _ProjectSkeleton(),
+                    );
                   },
                 ),
               )
@@ -347,8 +362,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                 sliver: SliverList.builder(
                   itemCount: _projects.length,
                   itemBuilder: (context, index) {
-                    final project =
-                        _projects[index];
+                    final project = _projects[index];
 
                     final projectId =
                         _stringValue(
@@ -368,9 +382,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                       ),
                       child: TchakaProjectCard(
                         project: project,
+                        index: index,
                         liked:
-                            _likedProjects[
-                                    projectId] ??
+                            _likedProjects[projectId] ??
                                 false,
                         bookmarked:
                             _bookmarkedProjects[
@@ -396,11 +410,12 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       ),
     );
   }
+    Widget _buildHeader() {
+    final selectedLabel =
+        _categories[_selectedCategory];
 
-  Widget _buildHeader() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Découvre des projets',
@@ -413,19 +428,15 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Des idées, des initiatives et des '
-          'projets qui méritent ton attention.',
-          style: Theme.of(context)
-              .textTheme
-              .bodyLarge,
+          'Des idées, des initiatives et des projets qui méritent ton attention.',
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: 20),
         TextField(
           readOnly: true,
           onTap: () {},
           decoration: InputDecoration(
-            hintText:
-                'Rechercher un projet...',
+            hintText: 'Rechercher un projet...',
             prefixIcon: const Icon(
               Icons.search_rounded,
             ),
@@ -437,38 +448,66 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
             ),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
           ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: 16,
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              selectedLabel,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildCategories() {
     return SizedBox(
-      height: 54,
+      height: 52,
       child: ListView.separated(
-        padding:
-            const EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 20,
         ),
         scrollDirection: Axis.horizontal,
-        itemCount: _filters.length,
+        itemCount: _categories.length,
         separatorBuilder: (_, __) =>
             const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final filter = _filters[index];
+          final selected =
+              index == _selectedCategory;
 
           return ChoiceChip(
-            label: Text(filter.label),
-            selected:
-                filter == _selectedFilter,
+            label: Text(_categories[index]),
+            selected: selected,
             onSelected: (_) {
-              _selectFilter(filter);
+              setState(() {
+                _selectedCategory = index;
+              });
+
+              if (index < _filters.length) {
+                _loadProjects(
+                  filter: _filters[index],
+                );
+              }
             },
           );
         },
@@ -500,13 +539,13 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: _loadProjects,
+            onPressed: () => _loadProjects(
+              filter: _filters[_selectedCategory],
+            ),
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text(
-              'Réessayer',
-            ),
+            label: const Text('Réessayer'),
           ),
         ],
       ),
@@ -537,19 +576,18 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Les nouveaux projets apparaîtront '
-            'ici au fur et à mesure.',
+            'Les nouveaux projets apparaîtront ici au fur et à mesure.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           OutlinedButton.icon(
-            onPressed: _loadProjects,
+            onPressed: () => _loadProjects(
+              filter: _filters[_selectedCategory],
+            ),
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text(
-              'Actualiser',
-            ),
+            label: const Text('Actualiser'),
           ),
         ],
       ),
@@ -557,8 +595,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
   }
 }
 
-class _ProjectSkeleton
-    extends StatelessWidget {
+class _ProjectSkeleton extends StatelessWidget {
   const _ProjectSkeleton();
 
   @override
@@ -585,8 +622,9 @@ class _ProjectSkeleton
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      margin:
-          const EdgeInsets.only(bottom: 18),
+      margin: const EdgeInsets.only(
+        bottom: 18,
+      ),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
