@@ -382,7 +382,6 @@ class _ProjectDiscoveryScreenState
                       ),
                       child: TchakaProjectCard(
                         project: project,
-                        index: index,
                         liked:
                             _likedProjects[projectId] ??
                                 false,
@@ -410,12 +409,13 @@ class _ProjectDiscoveryScreenState
       ),
     );
   }
-    Widget _buildHeader() {
+  Widget _buildHeader() {
     final selectedLabel =
         _categories[_selectedCategory];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           'Découvre des projets',
@@ -429,7 +429,9 @@ class _ProjectDiscoveryScreenState
         const SizedBox(height: 8),
         Text(
           'Des idées, des initiatives et des projets qui méritent ton attention.',
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge,
         ),
         const SizedBox(height: 20),
         TextField(
@@ -448,7 +450,8 @@ class _ProjectDiscoveryScreenState
             ),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius:
+                  BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
           ),
@@ -470,7 +473,8 @@ class _ProjectDiscoveryScreenState
                   .textTheme
                   .labelLarge
                   ?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                   ),
             ),
           ],
@@ -484,19 +488,24 @@ class _ProjectDiscoveryScreenState
     return SizedBox(
       height: 52,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(
+        padding:
+            const EdgeInsets.symmetric(
           horizontal: 20,
         ),
-        scrollDirection: Axis.horizontal,
+        scrollDirection:
+            Axis.horizontal,
         itemCount: _categories.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(width: 8),
+        separatorBuilder:
+            (_, __) =>
+                const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final selected =
               index == _selectedCategory;
 
           return ChoiceChip(
-            label: Text(_categories[index]),
+            label: Text(
+              _categories[index],
+            ),
             selected: selected,
             onSelected: (_) {
               setState(() {
@@ -517,7 +526,8 @@ class _ProjectDiscoveryScreenState
 
   Widget _buildError() {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.center,
@@ -539,13 +549,16 @@ class _ProjectDiscoveryScreenState
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: () => _loadProjects(
-              filter: _filters[_selectedCategory],
+            onPressed: () =>
+                _loadProjects(
+              filter: _filters[
+                  _selectedCategory],
             ),
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text('Réessayer'),
+            label:
+                const Text('Réessayer'),
           ),
         ],
       ),
@@ -554,7 +567,8 @@ class _ProjectDiscoveryScreenState
 
   Widget _buildEmpty() {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding:
+          const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.center,
@@ -581,21 +595,24 @@ class _ProjectDiscoveryScreenState
           ),
           const SizedBox(height: 20),
           OutlinedButton.icon(
-            onPressed: () => _loadProjects(
-              filter: _filters[_selectedCategory],
+            onPressed: () =>
+                _loadProjects(
+              filter: _filters[
+                  _selectedCategory],
             ),
             icon: const Icon(
               Icons.refresh_rounded,
             ),
-            label: const Text('Actualiser'),
+            label:
+                const Text('Actualiser'),
           ),
         ],
       ),
     );
   }
 }
-
-class _ProjectSkeleton extends StatelessWidget {
+class _ProjectSkeleton
+    extends StatelessWidget {
   const _ProjectSkeleton();
 
   @override
@@ -622,7 +639,8 @@ class _ProjectSkeleton extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(
+      margin:
+          const EdgeInsets.only(
         bottom: 18,
       ),
       child: Column(
@@ -635,7 +653,8 @@ class _ProjectSkeleton extends StatelessWidget {
             radius: 0,
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding:
+                const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
@@ -644,29 +663,39 @@ class _ProjectSkeleton extends StatelessWidget {
                   height: 18,
                   width: 90,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(
+                  height: 14,
+                ),
                 box(
                   height: 24,
                   width: 220,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(
+                  height: 10,
+                ),
                 box(
                   height: 16,
                   width: double.infinity,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(
+                  height: 8,
+                ),
                 box(
                   height: 16,
                   width: 250,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
                 Row(
                   children: [
                     box(
                       height: 34,
                       width: 90,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(
+                      width: 10,
+                    ),
                     box(
                       height: 34,
                       width: 110,
