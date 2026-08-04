@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../projects/data/project_engagement_service.dart';
 class PublicProfileScreen extends StatefulWidget {
   const PublicProfileScreen({
     super.key,
@@ -17,8 +18,21 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   final SupabaseClient _client = Supabase.instance.client;
 
   Map<String, dynamic>? _profile;
+
   bool _loading = true;
+  bool _following = false;
+  bool _followLoading = false;
+
   String? _error;
+
+  String? get _profileId => widget.userId ?? _client.auth.currentUser?.id;
+
+  bool get _isOwnProfile {
+    final currentUserId = _client.auth.currentUser?.id;
+    return currentUserId != null &&
+        _profileId != null &&
+        currentUserId == _profileId;
+  }
 
   @override
   void initState() {
@@ -33,8 +47,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     });
 
     try {
-      final currentUser = _client.auth.currentUser;
-      final profileId = widget.userId ?? currentUser?.id;
+      final profileId = _profileId;
 
       if (profileId == null) {
         throw Exception('Utilisateur non connecté.');
@@ -48,8 +61,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       if (!mounted) return;
 
+      if (response == null) {
+        setState(() {
+          _profile = null;
+          _loading = false;
+        });
+        return;
+      }
+
+      var following = false;
+
+      if (!_isOwnProfile) {
+        following = await ProjectEngagementService.isFollowingCreator(
+          profileId,
+        );
+      }
+
+      if (!mounted) return;
+
       setState(() {
         _profile = response;
+        _following = following;
         _loading = false;
       });
     } catch (_) {
@@ -62,6 +94,42 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
+  Future<void> _toggleFollow() async {
+    final profileId = _profileId;
+
+    if (profileId == null || _isOwnProfile || _followLoading) {
+      return;
+    }
+
+    setState(() {
+      _followLoading = true;
+    });
+
+    try {
+      final following = await ProjectEngagementService.toggleCreatorFollow(
+        creatorId: profileId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _following = following;
+        _followLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _followLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de modifier le suivi.'),
+        ),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,7 +261,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         : 'Utilisateur TCHAKA';
 
     final hasLocation =
-        country?.trim().isNotEmpty == true || city?.trim().isNotEmpty == true;
+        country?.trim().isNotEmpty == true ||
+        city?.trim().isNotEmpty == true;
 
     final location = [
       if (country?.trim().isNotEmpty == true) country!,
@@ -283,25 +352,40 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ],
         const SizedBox(height: 28),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.person_add_alt_1),
-                label: const Text('Suivre'),
+        if (!_isOwnProfile)
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _followLoading ? null : _toggleFollow,
+                  icon: _followLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          _following
+                              ? Icons.person_remove_alt_1
+                              : Icons.person_add_alt_1,
+                        ),
+                  label: Text(
+                    _following ? 'Ne plus suivre' : 'Suivre',
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.share_outlined),
-                label: const Text('Partager'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Partager'),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         const SizedBox(height: 36),
         Text(
           'Publications',
