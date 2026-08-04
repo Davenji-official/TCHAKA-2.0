@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../projects/data/project_engagement_service.dart';
+import '../../projects/data/project_service.dart';
 import '../data/skill_service.dart';
 import 'skills_screen.dart';
 
@@ -18,24 +19,32 @@ class PublicProfileScreen extends StatefulWidget {
       _PublicProfileScreenState();
 }
 
-class _PublicProfileScreenState extends State<PublicProfileScreen> {
-  final SupabaseClient _client = Supabase.instance.client;
+class _PublicProfileScreenState
+    extends State<PublicProfileScreen> {
+  final SupabaseClient _client =
+      Supabase.instance.client;
 
   Map<String, dynamic>? _profile;
+
   List<Map<String, dynamic>> _skills = [];
+  List<Map<String, dynamic>> _projects = [];
 
   bool _loading = true;
   bool _skillsLoading = true;
+  bool _projectsLoading = true;
+
   bool _following = false;
   bool _followLoading = false;
 
   String? _error;
 
   String? get _profileId =>
-      widget.userId ?? _client.auth.currentUser?.id;
+      widget.userId ??
+      _client.auth.currentUser?.id;
 
   bool get _isOwnProfile {
-    final currentUserId = _client.auth.currentUser?.id;
+    final currentUserId =
+        _client.auth.currentUser?.id;
 
     return currentUserId != null &&
         _profileId != null &&
@@ -52,6 +61,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     setState(() {
       _loading = true;
       _skillsLoading = true;
+      _projectsLoading = true;
       _error = null;
     });
 
@@ -59,7 +69,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       final profileId = _profileId;
 
       if (profileId == null) {
-        throw Exception('Utilisateur non connecté.');
+        throw Exception(
+          'Utilisateur non connecté.',
+        );
       }
 
       final response = await _client
@@ -74,8 +86,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         setState(() {
           _profile = null;
           _skills = [];
+          _projects = [];
           _loading = false;
           _skillsLoading = false;
+          _projectsLoading = false;
         });
         return;
       }
@@ -84,7 +98,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
       if (!_isOwnProfile) {
         following =
-            await ProjectEngagementService.isFollowingCreator(
+            await ProjectEngagementService
+                .isFollowingCreator(
           profileId,
         );
       }
@@ -97,26 +112,35 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _loading = false;
       });
 
-      await _loadSkills(profileId);
+      await Future.wait([
+        _loadSkills(profileId),
+        _loadProjects(profileId),
+      ]);
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
         _loading = false;
         _skillsLoading = false;
-        _error = 'Impossible de charger ce profil.';
+        _projectsLoading = false;
+        _error =
+            'Impossible de charger ce profil.';
       });
     }
   }
 
-  Future<void> _loadSkills(String profileId) async {
+  Future<void> _loadSkills(
+    String profileId,
+  ) async {
     setState(() {
       _skillsLoading = true;
     });
 
     try {
       final skills =
-          await SkillService.getUserSkills(profileId);
+          await SkillService.getUserSkills(
+        profileId,
+      );
 
       if (!mounted) return;
 
@@ -130,6 +154,36 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       setState(() {
         _skills = [];
         _skillsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadProjects(
+    String profileId,
+  ) async {
+    setState(() {
+      _projectsLoading = true;
+    });
+
+    try {
+      final projects =
+          await ProjectService
+              .getPublicProjectsByCreator(
+        profileId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _projects = projects;
+        _projectsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _projects = [];
+        _projectsLoading = false;
       });
     }
   }
@@ -148,7 +202,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     try {
       final following =
-          await ProjectEngagementService.toggleCreatorFollow(
+          await ProjectEngagementService
+              .toggleCreatorFollow(
         creatorId: profileId,
       );
 
@@ -165,7 +220,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _followLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
           content: Text(
             'Impossible de modifier le suivi.',
@@ -191,21 +247,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
-  String _skillName(Map<String, dynamic> skill) {
+  String _skillName(
+    Map<String, dynamic> skill,
+  ) {
     final data = skill['skills'];
 
     if (data is Map<String, dynamic>) {
-      return data['name']?.toString() ?? 'Compétence';
+      return data['name']?.toString() ??
+          'Compétence';
     }
 
     return 'Compétence';
   }
 
-  String? _skillCategory(Map<String, dynamic> skill) {
+  String? _skillCategory(
+    Map<String, dynamic> skill,
+  ) {
     final data = skill['skills'];
 
     if (data is Map<String, dynamic>) {
-      final category = data['category']?.toString();
+      final category =
+          data['category']?.toString();
 
       if (category != null &&
           category.trim().isNotEmpty) {
@@ -283,7 +345,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           color: Theme.of(context)
               .colorScheme
               .surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius:
+              BorderRadius.circular(20),
         ),
       ),
     );
@@ -298,7 +361,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         color: Theme.of(context)
             .colorScheme
             .surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
       ),
     );
   }
@@ -312,13 +376,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         Icon(
           Icons.cloud_off_outlined,
           size: 56,
-          color: Theme.of(context).colorScheme.error,
+          color: Theme.of(context)
+              .colorScheme
+              .error,
         ),
         const SizedBox(height: 16),
         Text(
           _error!,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium,
         ),
         const SizedBox(height: 20),
         Center(
@@ -355,14 +423,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       );
     }
 
-    final username = profile['username'] as String?;
-    final fullName = profile['full_name'] as String?;
-    final avatarUrl = profile['avatar_url'] as String?;
-    final bio = profile['bio'] as String?;
-    final country = profile['country'] as String?;
-    final city = profile['city'] as String?;
+    final username =
+        profile['username'] as String?;
+    final fullName =
+        profile['full_name'] as String?;
+    final avatarUrl =
+        profile['avatar_url'] as String?;
+    final bio =
+        profile['bio'] as String?;
+    final country =
+        profile['country'] as String?;
+    final city =
+        profile['city'] as String?;
+
     final isVerified =
         profile['is_verified'] == true;
+
     final isPremium =
         profile['is_premium'] == true;
 
@@ -385,8 +461,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     return ListView(
       physics:
           const AlwaysScrollableScrollPhysics(),
-      padding:
-          const EdgeInsets.fromLTRB(24, 24, 24, 40),
+      padding: const EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        40,
+      ),
       children: [
         Center(
           child: CircleAvatar(
@@ -549,47 +629,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _buildSkillsSection(),
         const SizedBox(height: 36),
         Text(
-          'Publications',
+          'Projets',
           style: Theme.of(context)
               .textTheme
               .titleLarge,
         ),
         const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 42,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Les publications arrivent bientôt.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium,
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Les créations de cet utilisateur '
-                  'apparaîtront ici.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildProjectsSection(),
       ],
     );
   }
-
-  Widget _buildSkillsSection() {
+    Widget _buildSkillsSection() {
     if (_skillsLoading) {
       return const Card(
         child: Padding(
@@ -648,8 +698,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     return Card(
       child: Padding(
-        padding:
-            const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          12,
+          16,
+          16,
+        ),
         child: Column(
           children:
               _skills.map(_buildSkillRow).toList(),
@@ -657,11 +711,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       ),
     );
   }
-    Widget _buildSkillRow(
+
+  Widget _buildSkillRow(
     Map<String, dynamic> skill,
   ) {
     final name = _skillName(skill);
-    final category = _skillCategory(skill);
+    final category =
+        _skillCategory(skill);
     final proficiency =
         _skillProficiency(skill);
 
@@ -715,6 +771,175 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProjectsSection() {
+    if (_projectsLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (_projects.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(
+                Icons.rocket_launch_outlined,
+                size: 42,
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Aucun projet publié.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _isOwnProfile
+                    ? 'Tes projets publiés apparaîtront ici.'
+                    : 'Les projets publics de cet utilisateur '
+                      'apparaîtront ici.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children:
+          _projects.map(_buildProjectCard).toList(),
+    );
+  }
+    Widget _buildProjectCard(
+    Map<String, dynamic> project,
+  ) {
+    final title =
+        project['title']?.toString() ??
+            'Projet sans titre';
+
+    final description =
+        project['description']?.toString();
+
+    final category =
+        project['category']?.toString();
+
+    final coverImageUrl =
+        project['cover_image_url']?.toString();
+
+    return Card(
+      margin:
+          const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          final projectId =
+              project['id']?.toString();
+
+          if (projectId == null) return;
+
+          // Navigation vers le détail du projet
+          // sera branchée dans une prochaine étape.
+        },
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            if (coverImageUrl != null &&
+                coverImageUrl.trim().isNotEmpty)
+              AspectRatio(
+                aspectRatio: 16 / 8,
+                child: Image.network(
+                  coverImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) {
+                    return Container(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 36,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium,
+                  ),
+                  if (category != null &&
+                      category.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Chip(
+                      label: Text(category),
+                      visualDensity:
+                          VisualDensity.compact,
+                    ),
+                  ],
+                  if (description != null &&
+                      description.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      maxLines: 3,
+                      overflow:
+                          TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.public,
+                        size: 18,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary,
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Projet public',
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.chevron_right,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
