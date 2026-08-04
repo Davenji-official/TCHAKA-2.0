@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/animations/tchaka_entrance.dart';
+import '../../projects/data/project_engagement_service.dart';
+import '../../projects/presentation/widgets/tchaka_project_card.dart';
 import '../data/feed_service.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -12,11 +15,18 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   final List<Map<String, dynamic>> _projects = [];
 
+  final Map<String, bool> _likedProjects = {};
+  final Map<String, bool> _bookmarkedProjects = {};
+  final Map<String, bool> _followedCreators = {};
+
   bool _loading = true;
   bool _loadingMore = false;
+  bool _hasMore = true;
+
   String? _error;
 
   int _offset = 0;
+
   static const int _pageSize = 20;
 
   @override
@@ -26,11 +36,14 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _loadFeed() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _offset = 0;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _offset = 0;
+        _hasMore = true;
+      });
+    }
 
     try {
       final projects = await FeedService.getProjectFeed(
@@ -44,9 +57,13 @@ class _FeedScreenState extends State<FeedScreen> {
         _projects
           ..clear()
           ..addAll(projects);
+
         _offset = projects.length;
+        _hasMore = projects.length >= _pageSize;
         _loading = false;
       });
+
+      await _loadEngagementStates(projects);
     } catch (_) {
       if (!mounted) return;
 
@@ -58,7 +75,7 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || _loading || _projects.length < _offset) {
+    if (_loadingMore || _loading || !_hasMore) {
       return;
     }
 
@@ -77,8 +94,11 @@ class _FeedScreenState extends State<FeedScreen> {
       setState(() {
         _projects.addAll(projects);
         _offset += projects.length;
+        _hasMore = projects.length >= _pageSize;
         _loadingMore = false;
       });
+
+      await _loadEngagementStates(projects);
     } catch (_) {
       if (!mounted) return;
 
@@ -88,6 +108,195 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  Future<void> _loadEngagementStates(
+    List<Map<String, dynamic>> projects,
+  ) async {
+    for (final project in projects) {
+      final projectId = _stringValue(project, 'id');
+
+      if (projectId.isEmpty) {
+        continue;
+      }
+
+      try {
+        final liked =
+            await ProjectEngagementService.isProjectLiked(projectId);
+
+        final bookmarked =
+            await ProjectEngagementService.isProjectBookmarked(projectId);
+
+        final creatorId = _stringValue(
+          project,
+          'creator_id',
+        );
+
+        bool followed = false;
+
+        if (creatorId.isNotEmpty) {
+          followed =
+              await ProjectEngagementService.isFollowingCreator(
+            creatorId,
+          );
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          _likedProjects[projectId] = liked;
+          _bookmarkedProjects[projectId] = bookmarked;
+
+          if (creatorId.isNotEmpty) {
+            _followedCreators[creatorId] = followed;
+          }
+        });
+      } catch (_) {
+        // Une erreur d'engagement ne doit pas bloquer le Feed.
+      }
+    }
+  }
+
+  Future<void> _toggleLike(
+    Map<String, dynamic> project,
+  ) async {
+    final projectId = _stringValue(project, 'id');
+
+    if (projectId.isEmpty) {
+      return;
+    }
+
+    final previous = _likedProjects[projectId] ?? false;
+
+    setState(() {
+      _likedProjects[projectId] = !previous;
+    });
+
+    try {
+      final liked =
+          await ProjectEngagementService.toggleProjectLike(
+        projectId: projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _likedProjects[projectId] = liked;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _likedProjects[projectId] = previous;
+      });
+
+      _showError('Impossible de modifier le like.');
+    }
+  }
+  Future<void> _toggleBookmark(
+    Map<String, dynamic> project,
+  ) async {
+    final projectId = _stringValue(project, 'id');
+
+    if (projectId.isEmpty) {
+      return;
+    }
+
+    final previous =
+        _bookmarkedProjects[projectId] ?? false;
+
+    setState(() {
+      _bookmarkedProjects[projectId] = !previous;
+    });
+
+    try {
+      final bookmarked =
+          await ProjectEngagementService.toggleProjectBookmark(
+        projectId: projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _bookmarkedProjects[projectId] = bookmarked;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _bookmarkedProjects[projectId] = previous;
+      });
+
+      _showError(
+        'Impossible d’enregistrer ce projet.',
+      );
+    }
+  }
+
+  Future<void> _toggleFollow(
+    Map<String, dynamic> project,
+  ) async {
+    final creatorId = _stringValue(
+      project,
+      'creator_id',
+    );
+
+    if (creatorId.isEmpty) {
+      return;
+    }
+
+    final previous =
+        _followedCreators[creatorId] ?? false;
+
+    setState(() {
+      _followedCreators[creatorId] = !previous;
+    });
+
+    try {
+      final followed =
+          await ProjectEngagementService.toggleCreatorFollow(
+        creatorId: creatorId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _followedCreators[creatorId] = followed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _followedCreators[creatorId] = previous;
+      });
+
+      _showError(
+        'Impossible de modifier le suivi.',
+      );
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _stringValue(
+    Map<String, dynamic> map,
+    String key, [
+    String fallback = '',
+  ]) {
+    final value = map[key];
+
+    if (value == null) {
+      return fallback;
+    }
+
+    return value.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,8 +304,11 @@ class _FeedScreenState extends State<FeedScreen> {
         title: const Text('TCHAKA'),
         actions: [
           IconButton(
+            tooltip: 'Notifications',
             onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+            ),
           ),
         ],
       ),
@@ -132,8 +344,14 @@ class _FeedScreenState extends State<FeedScreen> {
       },
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        itemCount: _projects.length + (_loadingMore ? 1 : 0),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          12,
+          16,
+          32,
+        ),
+        itemCount:
+            _projects.length + (_loadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _projects.length) {
             return const Padding(
@@ -144,23 +362,53 @@ class _FeedScreenState extends State<FeedScreen> {
             );
           }
 
-          return _ProjectCard(
-            project: _projects[index],
+          final project = _projects[index];
+
+          final projectId =
+              _stringValue(project, 'id');
+
+          final creatorId =
+              _stringValue(project, 'creator_id');
+
+          return TchakaEntrance(
+            delay: Duration(
+              milliseconds: 60 * (index % 6),
+            ),
+            child: TchakaProjectCard(
+              project: project,
+              liked:
+                  _likedProjects[projectId] ?? false,
+              bookmarked:
+                  _bookmarkedProjects[projectId] ??
+                      false,
+              followed:
+                  _followedCreators[creatorId] ??
+                      false,
+              onLike: () => _toggleLike(project),
+              onBookmark: () =>
+                  _toggleBookmark(project),
+              onFollow: () =>
+                  _toggleFollow(project),
+            ),
           );
         },
       ),
     );
   }
-
   Widget _buildLoading() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        32,
+      ),
       children: [
         _loadingCard(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         _loadingCard(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         _loadingCard(),
       ],
     );
@@ -168,43 +416,95 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Widget _loadingCard() {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _loadingLine(width: 150),
-            const SizedBox(height: 12),
-            _loadingLine(width: 100),
-            const SizedBox(height: 20),
-            _loadingBox(height: 180),
-            const SizedBox(height: 16),
-            _loadingLine(width: double.infinity),
-            const SizedBox(height: 8),
-            _loadingLine(width: 220),
-          ],
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          _loadingBox(
+            height: 190,
+            radius: 0,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                _loadingLine(
+                  width: 100,
+                  height: 18,
+                ),
+                const SizedBox(height: 14),
+                _loadingLine(
+                  width: 230,
+                  height: 24,
+                ),
+                const SizedBox(height: 12),
+                _loadingLine(
+                  width: double.infinity,
+                  height: 14,
+                ),
+                const SizedBox(height: 8),
+                _loadingLine(
+                  width: 250,
+                  height: 14,
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    _loadingLine(
+                      width: 90,
+                      height: 34,
+                      radius: 12,
+                    ),
+                    const SizedBox(width: 10),
+                    _loadingLine(
+                      width: 105,
+                      height: 34,
+                      radius: 12,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _loadingLine({required double width}) {
+  Widget _loadingLine({
+    required double width,
+    required double height,
+    double radius = 20,
+  }) {
     return Container(
       width: width,
-      height: 14,
+      height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest,
+        borderRadius:
+            BorderRadius.circular(radius),
       ),
     );
   }
 
-  Widget _loadingBox({required double height}) {
+  Widget _loadingBox({
+    required double height,
+    double radius = 20,
+  }) {
     return Container(
+      width: double.infinity,
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest,
+        borderRadius:
+            BorderRadius.circular(radius),
       ),
     );
   }
@@ -216,21 +516,28 @@ class _FeedScreenState extends State<FeedScreen> {
       children: [
         const SizedBox(height: 120),
         Icon(
-          Icons.cloud_off_outlined,
-          size: 56,
-          color: Theme.of(context).colorScheme.error,
+          Icons.cloud_off_rounded,
+          size: 58,
+          color:
+              Theme.of(context).colorScheme.error,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         Text(
           _error!,
           textAlign: TextAlign.center,
+          style:
+              Theme.of(context).textTheme.titleMedium,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         Center(
           child: FilledButton.icon(
             onPressed: _loadFeed,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
+            label: const Text(
+              'Réessayer',
+            ),
           ),
         ),
       ],
@@ -242,130 +549,56 @@ class _FeedScreenState extends State<FeedScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       children: [
-        const SizedBox(height: 120),
-        Icon(
-          Icons.auto_awesome_outlined,
-          size: 64,
-          color: Theme.of(context).colorScheme.primary,
+        const SizedBox(height: 110),
+        Center(
+          child: Container(
+            width: 82,
+            height: 82,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary
+                  .withValues(alpha: 0.10),
+            ),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 42,
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary,
+            ),
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         Text(
           'Ton Feed est encore calme.',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const Text(
           'Les nouveaux projets apparaîtront ici.',
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 22),
+        Center(
+          child: OutlinedButton.icon(
+            onPressed: _loadFeed,
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
+            label: const Text(
+              'Actualiser',
+            ),
+          ),
+        ),
       ],
-    );
-  }
-}
-
-class _ProjectCard extends StatelessWidget {
-  const _ProjectCard({
-    required this.project,
-  });
-
-  final Map<String, dynamic> project;
-
-  @override
-  Widget build(BuildContext context) {
-    final title = project['title'] as String? ?? 'Projet sans titre';
-    final description = project['description'] as String? ?? '';
-    final category = project['category'] as String?;
-    final country = project['country'] as String?;
-    final city = project['city'] as String?;
-    final coverImageUrl = project['cover_image_url'] as String?;
-    final likesCount = project['likes_count'] ?? 0;
-    final commentsCount = project['comments_count'] ?? 0;
-
-    final location = [
-      if (country?.trim().isNotEmpty == true) country!,
-      if (city?.trim().isNotEmpty == true) city!,
-    ].join(' · ');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.person_outline),
-            ),
-            title: const Text('Créateur TCHAKA'),
-            subtitle: Text(
-              location.isNotEmpty
-                  ? location
-                  : category ?? 'Projet',
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          if (description.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                description,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-          if (coverImageUrl?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 16),
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                coverImageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.broken_image_outlined),
-                  );
-                },
-              ),
-            ),
-          ],
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.favorite_border),
-                ),
-                Text('$likesCount'),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.mode_comment_outlined),
-                ),
-                Text('$commentsCount'),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.bookmark_border),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.share_outlined),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
