@@ -3,5 +3,5 @@ class SupabaseConfig {
 
   static const String url = 'https://fzakmezaovalxhwldoeb.supabase.co';
 
-  static const String publishableKey = 'REMPLACE_PAR_TA_CLE_PUBLISHABLE';
+  static const String publishableKey = 'sb_publishable_q_OQe7_k_Vb8xoEZObHJmw_IMrNXQsg';
 }
