@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
+import '../domain/project_discovery_filter.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
@@ -12,15 +13,8 @@ class ProjectDiscoveryScreen extends StatefulWidget {
 }
 
 class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
-  final List<String> _categories = const [
-    'Pour toi',
-    '🔥 Tendance',
-    '🚀 Rising',
-    '❤️ Populaires',
-    '👥 Plus suivis',
-    '🌍 Impact',
-    '📍 Près de toi',
-  ];
+  final List<ProjectDiscoveryFilter> _filters =
+      ProjectDiscoveryFilter.values;
 
   List<Map<String, dynamic>> _projects = [];
 
@@ -30,7 +24,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
   bool _loading = true;
   String? _error;
-  int _selectedCategory = 0;
+
+  ProjectDiscoveryFilter _selectedFilter =
+      ProjectDiscoveryFilter.forYou;
 
   @override
   void initState() {
@@ -47,7 +43,10 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
 
     try {
-      final projects = await ProjectDiscoveryService.getProjectFeed();
+      final projects =
+          await ProjectDiscoveryService.getProjectsForFilter(
+        filter: _selectedFilter,
+      );
 
       if (!mounted) return;
 
@@ -79,18 +78,25 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
       try {
         final liked =
-            await ProjectEngagementService.isProjectLiked(projectId);
+            await ProjectEngagementService.isProjectLiked(
+          projectId,
+        );
 
         final bookmarked =
-            await ProjectEngagementService.isProjectBookmarked(projectId);
+            await ProjectEngagementService.isProjectBookmarked(
+          projectId,
+        );
 
-        final creatorId = _stringValue(project, 'creator_id');
+        final creatorId =
+            _stringValue(project, 'creator_id');
 
         bool followed = false;
 
         if (creatorId.isNotEmpty) {
           followed =
-              await ProjectEngagementService.isFollowingCreator(creatorId);
+              await ProjectEngagementService.isFollowingCreator(
+            creatorId,
+          );
         }
 
         if (!mounted) return;
@@ -104,11 +110,26 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           }
         });
       } catch (_) {
-        // Une erreur d'engagement ne doit pas bloquer le feed.
+        // Une erreur d'engagement ne bloque pas le feed.
       }
     }
   }
-     Future<void> _toggleLike(
+
+  Future<void> _selectFilter(
+    ProjectDiscoveryFilter filter,
+  ) async {
+    if (_selectedFilter == filter) {
+      return;
+    }
+
+    setState(() {
+      _selectedFilter = filter;
+    });
+
+    await _loadProjects();
+  }
+
+  Future<void> _toggleLike(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(project, 'id');
@@ -144,8 +165,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       _showError('Impossible de modifier le like.');
     }
   }
-
-  Future<void> _toggleBookmark(
+    Future<void> _toggleBookmark(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(project, 'id');
@@ -154,7 +174,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       return;
     }
 
-    final previous = _bookmarkedProjects[projectId] ?? false;
+    final previous =
+        _bookmarkedProjects[projectId] ?? false;
 
     setState(() {
       _bookmarkedProjects[projectId] = !previous;
@@ -162,7 +183,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     try {
       final bookmarked =
-          await ProjectEngagementService.toggleProjectBookmark(
+          await ProjectEngagementService
+              .toggleProjectBookmark(
         projectId: projectId,
       );
 
@@ -178,20 +200,24 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         _bookmarkedProjects[projectId] = previous;
       });
 
-      _showError('Impossible d’enregistrer ce projet.');
+      _showError(
+        'Impossible d’enregistrer ce projet.',
+      );
     }
   }
 
   Future<void> _toggleFollow(
     Map<String, dynamic> project,
   ) async {
-    final creatorId = _stringValue(project, 'creator_id');
+    final creatorId =
+        _stringValue(project, 'creator_id');
 
     if (creatorId.isEmpty) {
       return;
     }
 
-    final previous = _followedCreators[creatorId] ?? false;
+    final previous =
+        _followedCreators[creatorId] ?? false;
 
     setState(() {
       _followedCreators[creatorId] = !previous;
@@ -199,7 +225,8 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
 
     try {
       final followed =
-          await ProjectEngagementService.toggleCreatorFollow(
+          await ProjectEngagementService
+              .toggleCreatorFollow(
         creatorId: creatorId,
       );
 
@@ -215,7 +242,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
         _followedCreators[creatorId] = previous;
       });
 
-      _showError('Impossible de modifier le suivi.');
+      _showError(
+        'Impossible de modifier le suivi.',
+      );
     }
   }
 
@@ -240,8 +269,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     }
 
     return value.toString();
-  } 
-         @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -250,7 +280,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           IconButton(
             tooltip: 'Notifications',
             onPressed: () {},
-            icon: const Icon(Icons.notifications_none_rounded),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+            ),
           ),
         ],
       ),
@@ -260,17 +292,27 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                0,
+              ),
               sliver: SliverToBoxAdapter(
                 child: _buildHeader(),
               ),
             ),
             SliverToBoxAdapter(
-              child: _buildCategories(),
+              child: _buildFilters(),
             ),
             if (_loading)
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  32,
+                ),
                 sliver: SliverList.builder(
                   itemCount: 4,
                   itemBuilder: (context, index) {
@@ -290,26 +332,45 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  32,
+                ),
                 sliver: SliverList.builder(
                   itemCount: _projects.length,
                   itemBuilder: (context, index) {
                     final project = _projects[index];
-                    final projectId = _stringValue(project, 'id');
+
+                    final projectId =
+                        _stringValue(project, 'id');
+
                     final creatorId =
-                        _stringValue(project, 'creator_id');
+                        _stringValue(
+                      project,
+                      'creator_id',
+                    );
 
                     return _ProjectCard(
                       project: project,
                       index: index,
-                      liked: _likedProjects[projectId] ?? false,
+                      liked:
+                          _likedProjects[projectId] ??
+                              false,
                       bookmarked:
-                          _bookmarkedProjects[projectId] ?? false,
+                          _bookmarkedProjects[
+                                  projectId] ??
+                              false,
                       followed:
-                          _followedCreators[creatorId] ?? false,
+                          _followedCreators[
+                                  creatorId] ??
+                              false,
                       onLike: () => _toggleLike(project),
-                      onBookmark: () => _toggleBookmark(project),
-                      onFollow: () => _toggleFollow(project),
+                      onBookmark: () =>
+                          _toggleBookmark(project),
+                      onFollow: () =>
+                          _toggleFollow(project),
                     );
                   },
                 ),
@@ -319,21 +380,26 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
       ),
     );
   }
-
-  Widget _buildHeader() {
+    Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Découvre des projets',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style:
+              Theme.of(context)
+                  .textTheme
+                  .headlineMedium
+                  ?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Des idées, des initiatives et des projets qui méritent ton attention.',
-          style: Theme.of(context).textTheme.bodyLarge,
+          'Des idées, des initiatives et des projets '
+          'qui méritent ton attention.',
+          style:
+              Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: 20),
         TextField(
@@ -341,7 +407,9 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           onTap: () {},
           decoration: InputDecoration(
             hintText: 'Rechercher un projet...',
-            prefixIcon: const Icon(Icons.search_rounded),
+            prefixIcon: const Icon(
+              Icons.search_rounded,
+            ),
             suffixIcon: IconButton(
               onPressed: () {},
               icon: const Icon(Icons.tune_rounded),
@@ -358,24 +426,25 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     );
   }
 
-  Widget _buildCategories() {
+  Widget _buildFilters() {
     return SizedBox(
-      height: 52,
+      height: 54,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemCount: _filters.length,
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final selected = index == _selectedCategory;
+          final filter = _filters[index];
 
           return ChoiceChip(
-            label: Text(_categories[index]),
-            selected: selected,
+            label: Text(filter.label),
+            selected: filter == _selectedFilter,
             onSelected: (_) {
-              setState(() {
-                _selectedCategory = index;
-              });
+              _selectFilter(filter);
             },
           );
         },
@@ -392,18 +461,24 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
           Icon(
             Icons.cloud_off_rounded,
             size: 56,
-            color: Theme.of(context).colorScheme.error,
+            color:
+                Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium,
+            style:
+                Theme.of(context)
+                    .textTheme
+                    .titleMedium,
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: _loadProjects,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
             label: const Text('Réessayer'),
           ),
         ],
@@ -415,28 +490,38 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment:
+            MainAxisAlignment.center,
         children: [
           Icon(
             Icons.auto_awesome_outlined,
             size: 64,
-            color: Theme.of(context).colorScheme.primary,
+            color:
+                Theme.of(context)
+                    .colorScheme
+                    .primary,
           ),
           const SizedBox(height: 18),
           Text(
             'Aucun projet pour le moment',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+            style:
+                Theme.of(context)
+                    .textTheme
+                    .titleLarge,
           ),
           const SizedBox(height: 8),
           const Text(
-            'Les nouveaux projets apparaîtront ici au fur et à mesure.',
+            'Les nouveaux projets apparaîtront ici '
+            'au fur et à mesure.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: _loadProjects,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
             label: const Text('Actualiser'),
           ),
         ],
@@ -490,7 +575,10 @@ class _ProjectCard extends StatelessWidget {
       return value.toInt();
     }
 
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
 
   double _doubleValue(String key) {
@@ -500,9 +588,12 @@ class _ProjectCard extends StatelessWidget {
       return value.toDouble();
     }
 
-    return double.tryParse(value?.toString() ?? '') ?? 0;
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
-         @override
+    @override
   Widget build(BuildContext context) {
     final title = _stringValue(
       'title',
@@ -514,7 +605,8 @@ class _ProjectCard extends StatelessWidget {
       'Un nouveau projet de la communauté TCHAKA.',
     );
 
-    final imageUrl = _stringValue('cover_image_url');
+    final imageUrl =
+        _stringValue('cover_image_url');
 
     final category = _stringValue(
       'category',
@@ -522,17 +614,22 @@ class _ProjectCard extends StatelessWidget {
     );
 
     final likes = _intValue('likes_count');
-    final comments = _intValue('comments_count');
-    final matchingSkills = _intValue('matching_skills_count');
-    final score = _doubleValue('feed_score');
+    final comments =
+        _intValue('comments_count');
+    final matchingSkills =
+        _intValue('matching_skills_count');
+    final score =
+        _doubleValue('feed_score');
 
-    final creatorId = _stringValue('creator_id');
+    final creatorId =
+        _stringValue('creator_id');
 
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 18),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           if (imageUrl.isNotEmpty)
             AspectRatio(
@@ -541,7 +638,8 @@ class _ProjectCard extends StatelessWidget {
                 imageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) {
-                  return const _ProjectImagePlaceholder();
+                  return const
+                      _ProjectImagePlaceholder();
                 },
               ),
             )
@@ -551,26 +649,39 @@ class _ProjectCard extends StatelessWidget {
               child: _ProjectImagePlaceholder(),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+            padding: const EdgeInsets.fromLTRB(
+              18,
+              18,
+              18,
+              20,
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding:
+                          const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primaryContainer,
+                      decoration:
+                          BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(30),
+                        color:
+                            Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
                       ),
                       child: Text(
                         category,
-                        style: Theme.of(context).textTheme.labelMedium,
+                        style:
+                            Theme.of(context)
+                                .textTheme
+                                .labelMedium,
                       ),
                     ),
                     const Spacer(),
@@ -579,7 +690,8 @@ class _ProjectCard extends StatelessWidget {
                       icon: Icon(
                         bookmarked
                             ? Icons.bookmark_rounded
-                            : Icons.bookmark_border_rounded,
+                            : Icons
+                                .bookmark_border_rounded,
                       ),
                     ),
                   ],
@@ -587,15 +699,21 @@ class _ProjectCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style:
+                      Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
+                            fontWeight:
+                                FontWeight.w700,
+                          ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   description,
                   maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  overflow:
+                      TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 18),
                 if (matchingSkills > 0) ...[
@@ -605,12 +723,15 @@ class _ProjectCard extends StatelessWidget {
                         Icons.auto_awesome_rounded,
                         size: 16,
                         color:
-                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context)
+                                .colorScheme
+                                .primary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '$matchingSkills compétence'
-                        '${matchingSkills > 1 ? 's' : ''} correspondante'
+                        '${matchingSkills > 1 ? 's' : ''} '
+                        'correspondante'
                         '${matchingSkills > 1 ? 's' : ''}',
                       ),
                     ],
@@ -623,11 +744,14 @@ class _ProjectCard extends StatelessWidget {
                       Icons.trending_up_rounded,
                       size: 17,
                       color:
-                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context)
+                              .colorScheme
+                              .primary,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Score Discovery ${score.toStringAsFixed(1)}',
+                      'Score Discovery '
+                      '${score.toStringAsFixed(1)}',
                     ),
                   ],
                 ),
@@ -637,17 +761,21 @@ class _ProjectCard extends StatelessWidget {
                     Icon(
                       liked
                           ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
+                          : Icons
+                              .favorite_border_rounded,
                       size: 18,
                       color: liked
-                          ? Theme.of(context).colorScheme.primary
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
                           : null,
                     ),
                     const SizedBox(width: 5),
                     Text('$likes'),
                     const SizedBox(width: 18),
                     const Icon(
-                      Icons.chat_bubble_outline_rounded,
+                      Icons
+                          .chat_bubble_outline_rounded,
                       size: 18,
                     ),
                     const SizedBox(width: 5),
@@ -658,15 +786,20 @@ class _ProjectCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child:
+                          OutlinedButton.icon(
                         onPressed: onLike,
                         icon: Icon(
                           liked
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
+                              ? Icons
+                                  .favorite_rounded
+                              : Icons
+                                  .favorite_border_rounded,
                         ),
                         label: Text(
-                          liked ? 'Aimé' : 'J’aime',
+                          liked
+                              ? 'Aimé'
+                              : 'J’aime',
                         ),
                       ),
                     ),
@@ -674,22 +807,30 @@ class _ProjectCard extends StatelessWidget {
                     Expanded(
                       child: followed
                           ? FilledButton.icon(
-                              onPressed: creatorId.isEmpty
-                                  ? null
-                                  : onFollow,
+                              onPressed:
+                                  creatorId.isEmpty
+                                      ? null
+                                      : onFollow,
                               icon: const Icon(
-                                Icons.person_rounded,
+                                Icons
+                                    .person_rounded,
                               ),
-                              label: const Text('Suivi'),
+                              label: const Text(
+                                'Suivi',
+                              ),
                             )
                           : OutlinedButton.icon(
-                              onPressed: creatorId.isEmpty
-                                  ? null
-                                  : onFollow,
+                              onPressed:
+                                  creatorId.isEmpty
+                                      ? null
+                                      : onFollow,
                               icon: const Icon(
-                                Icons.person_add_alt_1_rounded,
+                                Icons
+                                    .person_add_alt_1_rounded,
                               ),
-                              label: const Text('Suivre'),
+                              label: const Text(
+                                'Suivre',
+                              ),
                             ),
                     ),
                   ],
@@ -703,7 +844,8 @@ class _ProjectCard extends StatelessWidget {
   }
 }
 
-class _ProjectImagePlaceholder extends StatelessWidget {
+class _ProjectImagePlaceholder
+    extends StatelessWidget {
   const _ProjectImagePlaceholder();
 
   @override
@@ -716,14 +858,18 @@ class _ProjectImagePlaceholder extends StatelessWidget {
         child: Icon(
           Icons.rocket_launch_outlined,
           size: 52,
-          color: Theme.of(context).colorScheme.primary,
+          color:
+              Theme.of(context)
+                  .colorScheme
+                  .primary,
         ),
       ),
     );
   }
 }
 
-class _ProjectSkeleton extends StatelessWidget {
+class _ProjectSkeleton
+    extends StatelessWidget {
   const _ProjectSkeleton();
 
   @override
@@ -742,16 +888,19 @@ class _ProjectSkeleton extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius:
+              BorderRadius.circular(radius),
         ),
       );
     }
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 18),
+      margin:
+          const EdgeInsets.only(bottom: 18),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           box(
             height: 190,
@@ -761,21 +910,40 @@ class _ProjectSkeleton extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
-                box(height: 18, width: 90),
+                box(
+                  height: 18,
+                  width: 90,
+                ),
                 const SizedBox(height: 14),
-                box(height: 24, width: 220),
+                box(
+                  height: 24,
+                  width: 220,
+                ),
                 const SizedBox(height: 10),
-                box(height: 16, width: double.infinity),
+                box(
+                  height: 16,
+                  width: double.infinity,
+                ),
                 const SizedBox(height: 8),
-                box(height: 16, width: 250),
+                box(
+                  height: 16,
+                  width: 250,
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    box(height: 34, width: 90),
+                    box(
+                      height: 34,
+                      width: 90,
+                    ),
                     const SizedBox(width: 10),
-                    box(height: 34, width: 110),
+                    box(
+                      height: 34,
+                      width: 110,
+                    ),
                   ],
                 ),
               ],
