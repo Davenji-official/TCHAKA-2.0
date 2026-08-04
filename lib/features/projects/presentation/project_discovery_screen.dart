@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
+import '../../../../core/animations/tchaka_entrance.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
   const ProjectDiscoveryScreen({super.key});
@@ -352,7 +353,11 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                       'creator_id',
                     );
 
-                    return _ProjectCard(
+                    return TchakaEntrance(
+  delay: Duration(
+    milliseconds: 70 * index,
+  ),
+  child: _ProjectCard(
                       project: project,
                       index: index,
                       liked:
@@ -371,6 +376,7 @@ class _ProjectDiscoveryScreenState extends State<ProjectDiscoveryScreen> {
                           _toggleBookmark(project),
                       onFollow: () =>
                           _toggleFollow(project),
+                      ),
                     );
                   },
                 ),
