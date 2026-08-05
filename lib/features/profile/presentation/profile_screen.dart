@@ -948,4 +948,5 @@ class _PublicProfileScreenState
       ),
     ),
   );
-    }
+ );
+  }
