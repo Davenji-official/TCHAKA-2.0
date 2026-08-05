@@ -248,7 +248,7 @@ class ProjectDiscoveryService {
     // ne sont pas encore disponibles.
     return _sortByScore(projects);
   }
-  static List<Map<String, dynamic>> _normalizeResponse(
+    static List<Map<String, dynamic>> _normalizeResponse(
     dynamic response, {
     required String functionName,
   }) {
