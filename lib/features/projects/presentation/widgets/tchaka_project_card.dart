@@ -40,7 +40,8 @@ class _TchakaProjectCardState
 
     _likeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration:
+          const Duration(milliseconds: 260),
     );
   }
 
@@ -143,54 +144,50 @@ class _TchakaProjectCardState
     );
 
     return Card(
-  margin: const EdgeInsets.only(
-    bottom: 20,
-  ),
-  elevation: 0,
-  color: TchakaTheme.surface,
-  clipBehavior: Clip.antiAlias,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(
-      TchakaTheme.radiusLarge,
-    ),
-    side: BorderSide(
-      color: Colors.white.withValues(
-        alpha: 0.06,
+      margin: const EdgeInsets.only(
+        bottom: 20,
       ),
-    ),
-  ),
-  child: InkWell(
-    onTap: widget.onTap,
-    borderRadius: BorderRadius.circular(
-      TchakaTheme.radiusLarge,
-    ),
-    child: Column(
-              ],
+      elevation: 0,
+      color: TchakaTheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          TchakaTheme.radiusLarge,
+        ),
+        side: BorderSide(
+          color: Colors.white.withValues(
+            alpha: 0.06,
+          ),
+        ),
       ),
-    ),
-  ),
-);
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          _buildCover(
-            context,
-            imageUrl,
-          ),
-          _buildContent(
-            context,
-            title: title,
-            description: description,
-            category: category,
-            likes: likes,
-            comments: comments,
-            followers: followers,
-            matchingSkills: matchingSkills,
-            score: score,
-            impactScore: impactScore,
-            creatorId: creatorId,
-          ),
-        ],
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(
+          TchakaTheme.radiusLarge,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            _buildCover(
+              context,
+              imageUrl,
+            ),
+            _buildContent(
+              context,
+              title: title,
+              description: description,
+              category: category,
+              likes: likes,
+              comments: comments,
+              followers: followers,
+              matchingSkills: matchingSkills,
+              score: score,
+              impactScore: impactScore,
+              creatorId: creatorId,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -217,7 +214,6 @@ class _TchakaProjectCardState
                 )
               : const _TchakaProjectPlaceholder(),
         ),
-
         Positioned.fill(
           child: IgnorePointer(
             child: DecoratedBox(
@@ -236,7 +232,6 @@ class _TchakaProjectCardState
             ),
           ),
         ),
-
         Positioned(
           top: 14,
           left: 14,
@@ -244,7 +239,6 @@ class _TchakaProjectCardState
             context,
           ),
         ),
-
         Positioned(
           top: 8,
           right: 8,
@@ -254,7 +248,8 @@ class _TchakaProjectCardState
                 : 'Enregistrer',
             onPressed: widget.onBookmark,
             style: IconButton.styleFrom(
-              backgroundColor: Colors.black.withValues(
+              backgroundColor:
+                  Colors.black.withValues(
                 alpha: 0.55,
               ),
               foregroundColor:
@@ -269,7 +264,6 @@ class _TchakaProjectCardState
             ),
           ),
         ),
-
         Positioned(
           left: 14,
           bottom: 14,
@@ -290,15 +284,15 @@ class _TchakaProjectCardState
     );
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 11,
         vertical: 7,
       ),
       decoration: BoxDecoration(
         color: TchakaTheme.tchakaYellow,
-        borderRadius: BorderRadius.circular(
-          30,
-        ),
+        borderRadius:
+            BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: TchakaTheme.tchakaYellow
@@ -329,7 +323,8 @@ class _TchakaProjectCardState
     );
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 7,
       ),
@@ -337,9 +332,8 @@ class _TchakaProjectCardState
         color: Colors.black.withValues(
           alpha: 0.68,
         ),
-        borderRadius: BorderRadius.circular(
-          30,
-        ),
+        borderRadius:
+            BorderRadius.circular(30),
         border: Border.all(
           color: TchakaTheme.tchakaYellow
               .withValues(
@@ -353,7 +347,8 @@ class _TchakaProjectCardState
           const Icon(
             Icons.trending_up_rounded,
             size: 15,
-            color: TchakaTheme.tchakaYellow,
+            color:
+                TchakaTheme.tchakaYellow,
           ),
           const SizedBox(width: 5),
           Text(
@@ -370,8 +365,7 @@ class _TchakaProjectCardState
       ),
     );
   }
-
-  Widget _buildContent(
+    Widget _buildContent(
     BuildContext context, {
     required String title,
     required String description,
@@ -404,12 +398,11 @@ class _TchakaProjectCardState
                 .titleLarge
                 ?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: TchakaTheme.textPrimary,
+                  color:
+                      TchakaTheme.textPrimary,
                 ),
           ),
-
           const SizedBox(height: 9),
-
           Text(
             description,
             maxLines: 3,
@@ -418,36 +411,30 @@ class _TchakaProjectCardState
                 .textTheme
                 .bodyMedium
                 ?.copyWith(
-                  color: TchakaTheme.textSecondary,
+                  color:
+                      TchakaTheme.textSecondary,
                   height: 1.45,
                 ),
           ),
-
           const SizedBox(height: 16),
-
           if (matchingSkills > 0)
             _buildMatchingSkills(
               context,
               matchingSkills,
             ),
-
           if (impactScore > 0)
             _buildImpactRow(
               context,
               impactScore,
             ),
-
           const SizedBox(height: 16),
-
           _buildStats(
             context,
             likes: likes,
             comments: comments,
             followers: followers,
           ),
-
           const SizedBox(height: 18),
-
           _buildActions(
             context,
             creatorId,
@@ -456,12 +443,14 @@ class _TchakaProjectCardState
       ),
     );
   }
-    Widget _buildMatchingSkills(
+
+  Widget _buildMatchingSkills(
     BuildContext context,
     int matchingSkills,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 11,
         vertical: 9,
       ),
@@ -470,9 +459,8 @@ class _TchakaProjectCardState
             .withValues(
           alpha: 0.08,
         ),
-        borderRadius: BorderRadius.circular(
-          12,
-        ),
+        borderRadius:
+            BorderRadius.circular(12),
         border: Border.all(
           color: TchakaTheme.tchakaYellow
               .withValues(
@@ -485,7 +473,8 @@ class _TchakaProjectCardState
           const Icon(
             Icons.auto_awesome_rounded,
             size: 17,
-            color: TchakaTheme.tchakaYellow,
+            color:
+                TchakaTheme.tchakaYellow,
           ),
           const SizedBox(width: 7),
           Expanded(
@@ -513,9 +502,8 @@ class _TchakaProjectCardState
         impactScore.clamp(0, 100);
 
     return Padding(
-      padding: const EdgeInsets.only(
-        top: 12,
-      ),
+      padding:
+          const EdgeInsets.only(top: 12),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -525,7 +513,8 @@ class _TchakaProjectCardState
               const Icon(
                 Icons.public_rounded,
                 size: 17,
-                color: TchakaTheme.tchakaYellow,
+                color:
+                    TchakaTheme.tchakaYellow,
               ),
               const SizedBox(width: 7),
               const Expanded(
@@ -548,7 +537,7 @@ class _TchakaProjectCardState
               ),
             ],
           ),
-          const SizedBox(height: 7),
+                    const SizedBox(height: 7),
           ClipRRect(
             borderRadius:
                 BorderRadius.circular(20),
@@ -587,12 +576,14 @@ class _TchakaProjectCardState
         ),
         const SizedBox(width: 18),
         _buildStat(
-          icon: Icons.chat_bubble_outline_rounded,
+          icon:
+              Icons.chat_bubble_outline_rounded,
           value: comments,
         ),
         const SizedBox(width: 18),
         _buildStat(
-          icon: Icons.people_outline_rounded,
+          icon:
+              Icons.people_outline_rounded,
           value: followers,
         ),
       ],
@@ -620,7 +611,8 @@ class _TchakaProjectCardState
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: TchakaTheme.textSecondary,
+            color:
+                TchakaTheme.textSecondary,
           ),
         ),
       ],
@@ -642,13 +634,17 @@ class _TchakaProjectCardState
         Expanded(
           child: widget.followed
               ? FilledButton.icon(
-                  onPressed: creatorId.isEmpty
-                      ? null
-                      : widget.onFollow,
-                  style: FilledButton.styleFrom(
+                  onPressed:
+                      creatorId.isEmpty
+                          ? null
+                          : widget.onFollow,
+                  style:
+                      FilledButton.styleFrom(
                     backgroundColor:
-                        TchakaTheme.tchakaYellow,
-                    foregroundColor: Colors.black,
+                        TchakaTheme
+                            .tchakaYellow,
+                    foregroundColor:
+                        Colors.black,
                   ),
                   icon: const Icon(
                     Icons.person_rounded,
@@ -658,11 +654,13 @@ class _TchakaProjectCardState
                   ),
                 )
               : OutlinedButton.icon(
-                  onPressed: creatorId.isEmpty
-                      ? null
-                      : widget.onFollow,
+                  onPressed:
+                      creatorId.isEmpty
+                          ? null
+                          : widget.onFollow,
                   icon: const Icon(
-                    Icons.person_add_alt_1_rounded,
+                    Icons
+                        .person_add_alt_1_rounded,
                   ),
                   label: const Text(
                     'Suivre',
@@ -672,8 +670,7 @@ class _TchakaProjectCardState
       ],
     );
   }
-
-  Widget _buildLikeButton(
+    Widget _buildLikeButton(
     BuildContext context,
   ) {
     return OutlinedButton.icon(
@@ -760,7 +757,8 @@ class _TchakaProjectPlaceholder
           child: const Icon(
             Icons.rocket_launch_rounded,
             size: 30,
-            color: TchakaTheme.tchakaYellow,
+            color:
+                TchakaTheme.tchakaYellow,
           ),
         ),
       ),
