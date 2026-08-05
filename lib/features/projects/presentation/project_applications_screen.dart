@@ -138,9 +138,6 @@ class _ProjectApplicationsScreenState
   int get _acceptedCount =>
       _countStatus('accepted');
 
-  int get _rejectedCount =>
-      _countStatus('rejected');
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
