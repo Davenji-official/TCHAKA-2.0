@@ -20,26 +20,76 @@ class ProjectDiscoveryService {
       },
     );
 
-    if (response == null) {
-      return [];
-    }
+    return _normalizeResponse(
+      response,
+      functionName: 'get_project_feed',
+    );
+  }
 
-    if (response is! List) {
-      throw const FormatException(
-        'Réponse invalide de get_project_feed.',
+  static Future<List<Map<String, dynamic>>> searchProjects({
+    String? query,
+    String? category,
+    String? country,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc(
+      'search_projects',
+      params: {
+        'p_query': _nullableText(query),
+        'p_category': _nullableText(category),
+        'p_country': _nullableText(country),
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
+
+    return _normalizeResponse(
+      response,
+      functionName: 'search_projects',
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>> discoverProjects({
+    String? query,
+    ProjectDiscoveryFilter filter =
+        ProjectDiscoveryFilter.forYou,
+    String? category,
+    String? country,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = _nullableText(query);
+    final normalizedCategory = _nullableText(category);
+    final normalizedCountry = _nullableText(country);
+
+    final hasSearch =
+        normalizedQuery != null ||
+        normalizedCategory != null ||
+        normalizedCountry != null;
+
+    if (hasSearch) {
+      final projects = await searchProjects(
+        query: normalizedQuery,
+        category: normalizedCategory,
+        country: normalizedCountry,
+        limit: limit,
+        offset: offset,
+      );
+
+      return _applyClientFilter(
+        projects,
+        filter,
       );
     }
 
-    return response
-        .whereType<Map>()
-        .map(
-          (item) => Map<String, dynamic>.from(item),
-        )
-        .toList();
+    return getProjectsForFilter(
+      filter: filter,
+      limit: limit,
+      offset: offset,
+    );
   }
-
-  static Future<List<Map<String, dynamic>>>
-      getProjectsForFilter({
+    static Future<List<Map<String, dynamic>>> getProjectsForFilter({
     required ProjectDiscoveryFilter filter,
     int limit = 20,
     int offset = 0,
@@ -125,8 +175,8 @@ class ProjectDiscoveryService {
 
     return projects;
   }
-    static List<Map<String, dynamic>>
-      _sortByNumericField(
+
+  static List<Map<String, dynamic>> _sortByNumericField(
     List<Map<String, dynamic>> projects,
     String field,
   ) {
@@ -158,8 +208,7 @@ class ProjectDiscoveryService {
     return projects;
   }
 
-  static List<Map<String, dynamic>>
-      _sortByRecentActivity(
+  static List<Map<String, dynamic>> _sortByRecentActivity(
     List<Map<String, dynamic>> projects,
   ) {
     projects.sort((a, b) {
@@ -192,19 +241,46 @@ class ProjectDiscoveryService {
     return projects;
   }
 
-  static List<Map<String, dynamic>>
-      _sortByNearby(
+  static List<Map<String, dynamic>> _sortByNearby(
     List<Map<String, dynamic>> projects,
   ) {
-    /*
-     * La vraie proximité géographique sera branchée
-     * lorsque TCHAKA disposera des coordonnées
-     * utilisateur/projet nécessaires.
-     *
-     * Pour l'instant, on conserve un classement
-     * pertinent plutôt que d'inventer une distance.
-     */
+    // Les coordonnées géographiques nécessaires
+    // ne sont pas encore disponibles.
     return _sortByScore(projects);
+  }
+  static List<Map<String, dynamic>> _normalizeResponse(
+    dynamic response, {
+    required String functionName,
+  }) {
+    if (response == null) {
+      return [];
+    }
+
+    if (response is! List) {
+      throw FormatException(
+        'Réponse invalide de $functionName.',
+      );
+    }
+
+    return response
+        .whereType<Map>()
+        .map(
+          (item) => Map<String, dynamic>.from(item),
+        )
+        .toList();
+  }
+
+  static String? _nullableText(
+    String? value,
+  ) {
+    final normalized = value?.trim();
+
+    if (normalized == null ||
+        normalized.isEmpty) {
+      return null;
+    }
+
+    return normalized;
   }
 
   static double _numberValue(
@@ -245,7 +321,8 @@ class ProjectDiscoveryService {
         ) ??
         0;
   }
-    static double getProjectEngagementScore(
+
+  static double getProjectEngagementScore(
     Map<String, dynamic> project,
   ) {
     final likes =
@@ -270,8 +347,7 @@ class ProjectDiscoveryService {
           project['impact_score'],
         );
 
-    return
-        (likes * 2) +
+    return (likes * 2) +
         (comments * 3) +
         (bookmarks * 2) +
         followers +
@@ -291,11 +367,10 @@ class ProjectDiscoveryService {
   static bool isRising(
     Map<String, dynamic> project,
   ) {
-    final createdAt =
-        _dateValue(
-          project['published_at'] ??
-              project['created_at'],
-        );
+    final createdAt = _dateValue(
+      project['published_at'] ??
+          project['created_at'],
+    );
 
     final age =
         DateTime.now().difference(createdAt);
