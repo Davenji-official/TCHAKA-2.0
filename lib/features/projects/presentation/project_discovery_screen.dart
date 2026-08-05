@@ -1,715 +1,389 @@
-import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/animations/tchaka_entrance.dart';
-import '../data/project_discovery_service.dart';
-import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
-import 'project_detail_screen.dart';
-import 'widgets/tchaka_project_card.dart';
 
-class ProjectDiscoveryScreen extends StatefulWidget {
-  const ProjectDiscoveryScreen({super.key});
+class ProjectDiscoveryService {
+  ProjectDiscoveryService._();
 
-  @override
-  State<ProjectDiscoveryScreen> createState() =>
-      _ProjectDiscoveryScreenState();
-}
+  static final SupabaseClient _client =
+      Supabase.instance.client;
 
-class _ProjectDiscoveryScreenState
-    extends State<ProjectDiscoveryScreen> {
-  final List<String> _categories = const [
-    'Pour toi',
-    '🔥 Tendance',
-    '🚀 Rising',
-    '❤️ Populaires',
-    '👥 Plus suivis',
-    '🌍 Impact',
-    '📍 Près de toi',
-  ];
-
-  final List<ProjectDiscoveryFilter> _filters =
-      ProjectDiscoveryFilter.values;
-
-  List<Map<String, dynamic>> _projects = [];
-
-  final Map<String, bool> _likedProjects = {};
-  final Map<String, bool> _bookmarkedProjects = {};
-  final Map<String, bool> _followedCreators = {};
-
-  bool _loading = true;
-  String? _error;
-  int _selectedCategory = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProjects();
-  }
-
-  Future<void> _loadProjects({
-    ProjectDiscoveryFilter? filter,
+  static Future<List<Map<String, dynamic>>> getProjectFeed({
+    int limit = 20,
+    int offset = 0,
   }) async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+    final response = await _client.rpc(
+      'get_project_feed',
+      params: {
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
 
-    try {
-      final projects = filter == null
-          ? await ProjectDiscoveryService.getProjectFeed()
-          : await ProjectDiscoveryService.getProjectsForFilter(
-              filter: filter,
-            );
-
-      if (!mounted) return;
-
-      setState(() {
-        _projects = projects;
-        _loading = false;
-      });
-
-      await _loadEngagementStates(projects);
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-        _error = 'Impossible de charger les projets.';
-      });
-    }
+    return _normalizeResponse(
+      response,
+      functionName: 'get_project_feed',
+    );
   }
 
-  Future<void> _loadEngagementStates(
+  static Future<List<Map<String, dynamic>>> searchProjects({
+    String? query,
+    String? category,
+    String? country,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc(
+      'search_projects',
+      params: {
+        'p_query': _nullableText(query),
+        'p_category': _nullableText(category),
+        'p_country': _nullableText(country),
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
+
+    return _normalizeResponse(
+      response,
+      functionName: 'search_projects',
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>>
+      getProjectsForFilter({
+    required ProjectDiscoveryFilter filter,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final projects = await getProjectFeed(
+      limit: limit,
+      offset: offset,
+    );
+
+    return _applyClientFilter(
+      projects,
+      filter,
+    );
+  }
+    static Future<List<Map<String, dynamic>>>
+      discoverProjects({
+    String? query,
+    ProjectDiscoveryFilter filter =
+        ProjectDiscoveryFilter.forYou,
+    String? category,
+    String? country,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = _nullableText(query);
+
+    final hasSearch =
+        normalizedQuery != null ||
+        _nullableText(category) != null ||
+        _nullableText(country) != null;
+
+    if (hasSearch) {
+      final projects = await searchProjects(
+        query: normalizedQuery,
+        category: category,
+        country: country,
+        limit: limit,
+        offset: offset,
+      );
+
+      return _applyClientFilter(
+        projects,
+        filter,
+      );
+    }
+
+    return getProjectsForFilter(
+      filter: filter,
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  static List<Map<String, dynamic>> _normalizeResponse(
+    dynamic response, {
+    required String functionName,
+  }) {
+    if (response == null) {
+      return [];
+    }
+
+    if (response is! List) {
+      throw FormatException(
+        'Réponse invalide de $functionName.',
+      );
+    }
+
+    return response
+        .whereType<Map>()
+        .map(
+          (item) => Map<String, dynamic>.from(item),
+        )
+        .toList();
+  }
+
+  static String? _nullableText(
+    String? value,
+  ) {
+    final normalized = value?.trim();
+
+    if (normalized == null ||
+        normalized.isEmpty) {
+      return null;
+    }
+
+    return normalized;
+  }
+
+  static List<Map<String, dynamic>> _applyClientFilter(
     List<Map<String, dynamic>> projects,
-  ) async {
-    for (final project in projects) {
-      final projectId = _stringValue(
-        project,
-        'id',
-      );
+    ProjectDiscoveryFilter filter,
+  ) {
+    final result =
+        List<Map<String, dynamic>>.from(projects);
 
-      if (projectId.isEmpty) {
-        continue;
+    switch (filter) {
+      case ProjectDiscoveryFilter.forYou:
+        return _sortByScore(result);
+
+      case ProjectDiscoveryFilter.trending:
+        return _sortByScore(result);
+
+      case ProjectDiscoveryFilter.rising:
+        return _sortByRecentActivity(result);
+
+      case ProjectDiscoveryFilter.mostLiked:
+        return _sortByNumericField(
+          result,
+          'likes_count',
+        );
+
+      case ProjectDiscoveryFilter.mostFollowed:
+        return _sortByNumericField(
+          result,
+          'followers_count',
+        );
+
+      case ProjectDiscoveryFilter.impact:
+        return _sortByNumericField(
+          result,
+          'impact_score',
+        );
+
+      case ProjectDiscoveryFilter.nearby:
+        return _sortByNearby(result);
+    }
+  }
+    static List<Map<String, dynamic>> _sortByScore(
+    List<Map<String, dynamic>> projects,
+  ) {
+    projects.sort((a, b) {
+      final aScore =
+          _numberValue(a['feed_score']);
+
+      final bScore =
+          _numberValue(b['feed_score']);
+
+      final scoreComparison =
+          bScore.compareTo(aScore);
+
+      if (scoreComparison != 0) {
+        return scoreComparison;
       }
 
-      try {
-        final liked =
-            await ProjectEngagementService.isProjectLiked(
-          projectId,
-        );
+      return _dateValue(
+        b['published_at'] ??
+            b['created_at'],
+      ).compareTo(
+        _dateValue(
+          a['published_at'] ??
+              a['created_at'],
+        ),
+      );
+    });
 
-        final bookmarked =
-            await ProjectEngagementService.isProjectBookmarked(
-          projectId,
-        );
+    return projects;
+  }
 
-        final creatorId = _stringValue(
-          project,
-          'creator_id',
-        );
+  static List<Map<String, dynamic>>
+      _sortByNumericField(
+    List<Map<String, dynamic>> projects,
+    String field,
+  ) {
+    projects.sort((a, b) {
+      final aValue =
+          _numberValue(a[field]);
 
-        bool followed = false;
+      final bValue =
+          _numberValue(b[field]);
 
-        if (creatorId.isNotEmpty) {
-          followed =
-              await ProjectEngagementService.isFollowingCreator(
-            creatorId,
-          );
-        }
+      final comparison =
+          bValue.compareTo(aValue);
 
-        if (!mounted) return;
-
-        setState(() {
-          _likedProjects[projectId] = liked;
-          _bookmarkedProjects[projectId] = bookmarked;
-
-          if (creatorId.isNotEmpty) {
-            _followedCreators[creatorId] = followed;
-          }
-        });
-      } catch (_) {
-        // Une erreur d'engagement ne bloque pas le feed.
+      if (comparison != 0) {
+        return comparison;
       }
-    }
-  }
-    Future<void> _toggleLike(
-    Map<String, dynamic> project,
-  ) async {
-    final projectId = _stringValue(
-      project,
-      'id',
-    );
 
-    if (projectId.isEmpty) {
-      return;
-    }
-
-    final previous =
-        _likedProjects[projectId] ?? false;
-
-    setState(() {
-      _likedProjects[projectId] = !previous;
+      return _dateValue(
+        b['published_at'] ??
+            b['created_at'],
+      ).compareTo(
+        _dateValue(
+          a['published_at'] ??
+              a['created_at'],
+        ),
+      );
     });
 
-    try {
-      final liked =
-          await ProjectEngagementService.toggleProjectLike(
-        projectId: projectId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _likedProjects[projectId] = liked;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _likedProjects[projectId] = previous;
-      });
-
-      _showError(
-        'Impossible de modifier le like.',
-      );
-    }
+    return projects;
   }
 
-  Future<void> _toggleBookmark(
-    Map<String, dynamic> project,
-  ) async {
-    final projectId = _stringValue(
-      project,
-      'id',
-    );
+  static List<Map<String, dynamic>>
+      _sortByRecentActivity(
+    List<Map<String, dynamic>> projects,
+  ) {
+    projects.sort((a, b) {
+      final aDate = _dateValue(
+        a['published_at'] ??
+            a['created_at'],
+      );
 
-    if (projectId.isEmpty) {
-      return;
-    }
+      final bDate = _dateValue(
+        b['published_at'] ??
+            b['created_at'],
+      );
 
-    final previous =
-        _bookmarkedProjects[projectId] ?? false;
+      final dateComparison =
+          bDate.compareTo(aDate);
 
-    setState(() {
-      _bookmarkedProjects[projectId] = !previous;
+      if (dateComparison != 0) {
+        return dateComparison;
+      }
+
+      final aScore =
+          _numberValue(a['feed_score']);
+
+      final bScore =
+          _numberValue(b['feed_score']);
+
+      return bScore.compareTo(aScore);
     });
 
-    try {
-      final bookmarked =
-          await ProjectEngagementService.toggleProjectBookmark(
-        projectId: projectId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _bookmarkedProjects[projectId] = bookmarked;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _bookmarkedProjects[projectId] = previous;
-      });
-
-      _showError(
-        'Impossible d’enregistrer ce projet.',
-      );
-    }
+    return projects;
   }
 
-  Future<void> _toggleFollow(
+  static List<Map<String, dynamic>>
+      _sortByNearby(
+    List<Map<String, dynamic>> projects,
+  ) {
+    /*
+     * La vraie proximité géographique sera branchée
+     * lorsque TCHAKA disposera des coordonnées
+     * utilisateur/projet nécessaires.
+     *
+     * Pour l'instant, on conserve un classement
+     * pertinent plutôt que d'inventer une distance.
+     */
+    return _sortByScore(projects);
+  }
+
+  static double _numberValue(
+    dynamic value,
+  ) {
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static DateTime _dateValue(
+    dynamic value,
+  ) {
+    return DateTime.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  static int _intValue(
+    dynamic value,
+  ) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static double getProjectEngagementScore(
     Map<String, dynamic> project,
-  ) async {
-    final creatorId = _stringValue(
-      project,
-      'creator_id',
-    );
+  ) {
+    final likes =
+        _intValue(project['likes_count']);
 
-    if (creatorId.isEmpty) {
-      return;
-    }
+    final comments =
+        _intValue(project['comments_count']);
 
-    final previous =
-        _followedCreators[creatorId] ?? false;
+    final bookmarks =
+        _intValue(project['bookmarks_count']);
 
-    setState(() {
-      _followedCreators[creatorId] = !previous;
-    });
+    final followers =
+        _intValue(project['followers_count']);
 
-    try {
-      final followed =
-          await ProjectEngagementService.toggleCreatorFollow(
-        creatorId: creatorId,
-      );
+    final matchingSkills =
+        _intValue(
+          project['matching_skills_count'],
+        );
 
-      if (!mounted) return;
+    final impactScore =
+        _numberValue(
+          project['impact_score'],
+        );
 
-      setState(() {
-        _followedCreators[creatorId] = followed;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _followedCreators[creatorId] = previous;
-      });
-
-      _showError(
-        'Impossible de modifier le suivi.',
-      );
-    }
+    return (likes * 2) +
+        (comments * 3) +
+        (bookmarks * 2) +
+        followers +
+        (matchingSkills * 10) +
+        impactScore;
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  static bool isTrending(
+    Map<String, dynamic> project,
+  ) {
+    final score =
+        _numberValue(project['feed_score']);
+
+    return score >= 20;
   }
 
-  String _stringValue(
-    Map<String, dynamic> map,
-    String key, [
-    String fallback = '',
-  ]) {
-    final value = map[key];
-
-    if (value == null) {
-      return fallback;
-    }
-
-    return value.toString();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('TCHAKA'),
-        actions: [
-          IconButton(
-            tooltip: 'Notifications',
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-            ),
-          ),
-        ],
-      ),
-            body: RefreshIndicator(
-        onRefresh: () => _loadProjects(
-          filter: _filters[_selectedCategory],
-        ),
-        child: CustomScrollView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                20,
-                20,
-                0,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: _buildHeader(),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: _buildCategories(),
-            ),
-            if (_loading)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  32,
-                ),
-                sliver: SliverList.builder(
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    return TchakaEntrance(
-                      delay: Duration(
-                        milliseconds: 70 * index,
-                      ),
-                      child:
-                          const _ProjectSkeleton(),
-                    );
-                  },
-                ),
-              )
-            else if (_error != null)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _buildError(),
-              )
-            else if (_projects.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _buildEmpty(),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  32,
-                ),
-                sliver: SliverList.builder(
-                  itemCount: _projects.length,
-                  itemBuilder: (context, index) {
-                    final project = _projects[index];
-
-                    final projectId =
-                        _stringValue(
-                      project,
-                      'id',
-                    );
-
-                    final creatorId =
-                        _stringValue(
-                      project,
-                      'creator_id',
-                    );
-
-                    return TchakaEntrance(
-                      delay: Duration(
-                        milliseconds: 70 * index,
-                      ),
-                      child: TchakaProjectCard(
-                        project: project,
-                        liked:
-                            _likedProjects[
-                                    projectId] ??
-                                false,
-                        bookmarked:
-                            _bookmarkedProjects[
-                                    projectId] ??
-                                false,
-                        followed:
-                            _followedCreators[
-                                    creatorId] ??
-                                false,
-                        onLike: () =>
-                            _toggleLike(project),
-                        onBookmark: () =>
-                            _toggleBookmark(project),
-                        onFollow: () =>
-                            _toggleFollow(project),
-                        onTap: projectId.isEmpty
-                            ? null
-                            : () {
-                                Navigator.of(
-                                  context,
-                                ).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ProjectDetailScreen(
-                                      projectId:
-                                          projectId,
-                                    ),
-                                  ),
-                                );
-                              },
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
+  static bool isRising(
+    Map<String, dynamic> project,
+  ) {
+    final createdAt = _dateValue(
+      project['published_at'] ??
+          project['created_at'],
     );
-  }
-    Widget _buildHeader() {
-    final selectedLabel =
-        _categories[_selectedCategory];
 
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Découvre des projets',
-          style: Theme.of(context)
-              .textTheme
-              .headlineMedium
-              ?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Des idées, des initiatives et des projets qui méritent ton attention.',
-          style: Theme.of(context)
-              .textTheme
-              .bodyLarge,
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          readOnly: true,
-          onTap: () {},
-          decoration: InputDecoration(
-            hintText:
-                'Rechercher un projet...',
-            prefixIcon: const Icon(
-              Icons.search_rounded,
-            ),
-            suffixIcon: IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.tune_rounded,
-              ),
-            ),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(18),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              size: 16,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              selectedLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
+    final age =
+        DateTime.now().difference(createdAt);
 
-  Widget _buildCategories() {
-    return SizedBox(
-      height: 52,
-      child: ListView.separated(
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 20,
-        ),
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final selected =
-              index == _selectedCategory;
-
-          return ChoiceChip(
-            label: Text(
-              _categories[index],
-            ),
-            selected: selected,
-            onSelected: (_) {
-              setState(() {
-                _selectedCategory = index;
-              });
-
-              if (index < _filters.length) {
-                _loadProjects(
-                  filter: _filters[index],
-                );
-              }
-            },
-          );
-        },
-      ),
-    );
-  }
-    Widget _buildError() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.cloud_off_rounded,
-            size: 56,
-            color: Theme.of(context)
-                .colorScheme
-                .error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium,
-          ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => _loadProjects(
-              filter:
-                  _filters[_selectedCategory],
-            ),
-            icon: const Icon(
-              Icons.refresh_rounded,
-            ),
-            label:
-                const Text('Réessayer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.auto_awesome_outlined,
-            size: 64,
-            color: Theme.of(context)
-                .colorScheme
-                .primary,
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Aucun projet pour le moment',
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Les nouveaux projets apparaîtront ici au fur et à mesure.',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: () => _loadProjects(
-              filter:
-                  _filters[_selectedCategory],
-            ),
-            icon: const Icon(
-              Icons.refresh_rounded,
-            ),
-            label:
-                const Text('Actualiser'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProjectSkeleton
-    extends StatelessWidget {
-  const _ProjectSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context)
-        .colorScheme
-        .surfaceContainerHighest;
-
-    Widget box({
-      required double height,
-      double? width,
-      double radius = 14,
-    }) {
-      return Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius:
-              BorderRadius.circular(radius),
-        ),
-      );
-    }
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(
-        bottom: 18,
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          box(
-            height: 190,
-            width: double.infinity,
-            radius: 0,
-          ),
-          Padding(
-            padding:
-                const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                                box(
-                  height: 18,
-                  width: 90,
-                ),
-                const SizedBox(height: 14),
-                box(
-                  height: 24,
-                  width: 220,
-                ),
-                const SizedBox(height: 10),
-                box(
-                  height: 16,
-                  width: double.infinity,
-                ),
-                const SizedBox(height: 8),
-                box(
-                  height: 16,
-                  width: 250,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    box(
-                      height: 34,
-                      width: 90,
-                    ),
-                    const SizedBox(width: 10),
-                    box(
-                      height: 34,
-                      width: 110,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return age.inDays <= 7;
   }
 }
