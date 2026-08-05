@@ -1716,40 +1716,4 @@ class _ProjectDetailScreenState
     return 'Impossible d’envoyer la candidature. '
         'Réessaie.';
   }
-    Future<void> _refreshFunding() async {
-    try {
-      final stats =
-          await ProjectFundingService.getStats(
-        widget.projectId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _fundingStats = stats;
-      });
-    } catch (_) {
-      // Le financement ne doit pas empêcher
-      // l'affichage du reste de la page.
-    }
-  }
-
-  Future<void> _refreshApplication() async {
-    try {
-      final application =
-          await ProjectApplicationService
-              .getMyApplication(
-        widget.projectId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _myApplication = application;
-      });
-    } catch (_) {
-      // L'état de candidature reste inchangé
-      // si Supabase ne répond pas.
-    }
-  }
 }
