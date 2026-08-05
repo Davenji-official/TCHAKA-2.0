@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../data/project_application_service.dart';
 import '../data/project_engagement_service.dart';
 import '../data/project_funding_service.dart';
@@ -12,12 +16,10 @@ class ProjectDetailScreen extends StatefulWidget {
   final String projectId;
 
   @override
-  State<ProjectDetailScreen> createState() =>
-      _ProjectDetailScreenState();
+  State<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
 }
 
-class _ProjectDetailScreenState
-    extends State<ProjectDetailScreen>
+class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     with SingleTickerProviderStateMixin {
   static const Color _yellow = Color(0xFFFFD54A);
 
@@ -36,7 +38,8 @@ class _ProjectDetailScreenState
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
-    bool get _isProjectOwner {
+
+  bool get _isProjectOwner {
     final creatorId = _project?['creator_id']?.toString();
     final currentUserId =
         Supabase.instance.client.auth.currentUser?.id;
@@ -45,7 +48,7 @@ class _ProjectDetailScreenState
         creatorId.isNotEmpty &&
         currentUserId != null &&
         creatorId == currentUserId;
-    }
+  }
 
   @override
   void initState() {
@@ -89,9 +92,7 @@ class _ProjectDetailScreenState
     }
 
     try {
-      final project = await ProjectService.getProject(
-        widget.projectId,
-      );
+      final project = await ProjectService.getProject(widget.projectId);
 
       final liked =
           await ProjectEngagementService.isProjectLiked(
@@ -175,9 +176,7 @@ class _ProjectDetailScreenState
         _likeLoading = false;
       });
 
-      _showMessage(
-        'Connecte-toi pour aimer ce projet.',
-      );
+      _showMessage('Connecte-toi pour aimer ce projet.');
     }
   }
 
@@ -223,7 +222,8 @@ class _ProjectDetailScreenState
         ),
       );
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
@@ -300,8 +300,7 @@ class _ProjectDetailScreenState
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 72,
@@ -484,7 +483,7 @@ class _ProjectDetailScreenState
                     fallbackFundingGoal,
                     fallbackCurrency,
                   ),
-                   const SizedBox(height: 28),
+                  const SizedBox(height: 28),
                   _buildProjectOwnerActions(),
                   if (!_isProjectOwner) ...[
                     const SizedBox(height: 14),
@@ -788,7 +787,8 @@ class _ProjectDetailScreenState
       label: Text(label),
     );
   }
-    Widget _buildSectionTitle(String title) {
+
+  Widget _buildSectionTitle(String title) {
     return Row(
       children: [
         Container(
@@ -1119,7 +1119,8 @@ class _ProjectDetailScreenState
       ),
     );
   }
-    Widget _fundingMiniStat(
+
+  Widget _fundingMiniStat(
     IconData icon,
     String label,
     String value,
@@ -1253,7 +1254,6 @@ class _ProjectDetailScreenState
           (match) => ' ',
         );
   }
-
     Widget _buildProjectOwnerActions() {
     if (!_isProjectOwner) {
       return const SizedBox.shrink();
@@ -1275,7 +1275,8 @@ class _ProjectDetailScreenState
             width: 1.5,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(17),
+            borderRadius:
+                BorderRadius.circular(17),
           ),
         ),
         icon: const Icon(
@@ -1290,8 +1291,8 @@ class _ProjectDetailScreenState
         ),
       ),
     );
-    }
-  
+  }
+
   Widget _buildCollaborateButton() {
     final status =
         _myApplication?['status']
@@ -1425,7 +1426,8 @@ class _ProjectDetailScreenState
       ),
     );
   }
-    Future<void> _openApplicationSheet() async {
+
+  Future<void> _openApplicationSheet() async {
     final roleController =
         TextEditingController();
 
@@ -1547,7 +1549,8 @@ class _ProjectDetailScreenState
                               TextInputAction.next,
                           decoration:
                               InputDecoration(
-                            labelText: 'Rôle souhaité',
+                            labelText:
+                                'Rôle souhaité',
                             hintText:
                                 'Ex. Développeur Flutter',
                             prefixIcon:
