@@ -89,7 +89,8 @@ class ProjectDiscoveryService {
       offset: offset,
     );
   }
-    static Future<List<Map<String, dynamic>>> getProjectsForFilter({
+
+  static Future<List<Map<String, dynamic>>> getProjectsForFilter({
     required ProjectDiscoveryFilter filter,
     int limit = 20,
     int offset = 0,
@@ -244,11 +245,10 @@ class ProjectDiscoveryService {
   static List<Map<String, dynamic>> _sortByNearby(
     List<Map<String, dynamic>> projects,
   ) {
-    // Les coordonnées géographiques nécessaires
-    // ne sont pas encore disponibles.
     return _sortByScore(projects);
   }
-    static List<Map<String, dynamic>> _normalizeResponse(
+
+  static List<Map<String, dynamic>> _normalizeResponse(
     dynamic response, {
     required String functionName,
   }) {
