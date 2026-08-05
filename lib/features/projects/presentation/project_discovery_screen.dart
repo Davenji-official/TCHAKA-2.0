@@ -4,6 +4,7 @@ import '../../../../core/animations/tchaka_entrance.dart';
 import '../data/project_discovery_service.dart';
 import '../data/project_engagement_service.dart';
 import '../domain/project_discovery_filter.dart';
+import 'project_detail_screen.dart';
 import 'widgets/tchaka_project_card.dart';
 
 class ProjectDiscoveryScreen extends StatefulWidget {
@@ -381,34 +382,37 @@ class _ProjectDiscoveryScreenState
                         milliseconds: 70 * index,
                       ),
                       child: TchakaProjectCard(
-                        project: project,
-                        liked:
-                            _likedProjects[projectId] ??
-                                false,
-                        bookmarked:
-                            _bookmarkedProjects[
-                                    projectId] ??
-                                false,
-                        followed:
-                            _followedCreators[
-                                    creatorId] ??
-                                false,
-                        onLike: () =>
-                            _toggleLike(project),
-                        onBookmark: () =>
-                            _toggleBookmark(project),
-                        onFollow: () =>
-                            _toggleFollow(project),
-                      ),
-                    );
-                  },
-                ),
+  project: project,
+  liked:
+      _likedProjects[projectId] ??
+          false,
+  bookmarked:
+      _bookmarkedProjects[
+              projectId] ??
+          false,
+  followed:
+      _followedCreators[
+              creatorId] ??
+          false,
+  onLike: () =>
+      _toggleLike(project),
+  onBookmark: () =>
+      _toggleBookmark(project),
+  onFollow: () =>
+      _toggleFollow(project),
+  onTap: projectId.isEmpty
+      ? null
+      : () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  ProjectDetailScreen(
+                projectId: projectId,
               ),
-          ],
-        ),
-      ),
-    );
-  }
+            ),
+          );
+        },
+),
   Widget _buildHeader() {
     final selectedLabel =
         _categories[_selectedCategory];
