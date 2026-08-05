@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/project_application_service.dart';
-import '../data/project_engagement_service.dart';
-import '../data/project_funding_service.dart';
-import '../data/project_service.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   const ProjectDetailScreen({
@@ -38,6 +37,16 @@ class _ProjectDetailScreenState
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
+    bool get _isProjectOwner {
+    final creatorId = _project?['creator_id']?.toString();
+    final currentUserId =
+        Supabase.instance.client.auth.currentUser?.id;
+
+    return creatorId != null &&
+        creatorId.isNotEmpty &&
+        currentUserId != null &&
+        creatorId == currentUserId;
+    }
 
   @override
   void initState() {
@@ -476,8 +485,13 @@ class _ProjectDetailScreenState
                     fallbackFundingGoal,
                     fallbackCurrency,
                   ),
-                  const SizedBox(height: 28),
-                  _buildCollaborateButton(),
+                   const SizedBox(height: 28),
+                  _buildProjectOwnerActions(),
+                  if (!_isProjectOwner) ...[
+                    const SizedBox(height: 14),
+                    _buildCollaborateButton(),
+                  ],
+                  ],
                 ]),
               ),
             ),
@@ -1242,6 +1256,44 @@ class _ProjectDetailScreenState
         );
   }
 
+    Widget _buildProjectOwnerActions() {
+    if (!_isProjectOwner) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          context.push(
+            '/projects/${widget.projectId}/applications',
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _yellow,
+          side: const BorderSide(
+            color: _yellow,
+            width: 1.5,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(17),
+          ),
+        ),
+        icon: const Icon(
+          Icons.people_alt_outlined,
+        ),
+        label: const Text(
+          'Gérer les candidatures',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+    }
+  
   Widget _buildCollaborateButton() {
     final status =
         _myApplication?['status']
