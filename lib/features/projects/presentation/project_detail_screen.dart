@@ -29,14 +29,11 @@ class _ProjectDetailScreenState
 
   bool _loading = true;
   bool _error = false;
-  bool _fundingLoading = false;
-  bool _applicationLoading = false;
-
   bool _liked = false;
   bool _bookmarked = false;
-
   bool _likeLoading = false;
   bool _bookmarkLoading = false;
+  bool _applicationLoading = false;
 
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
@@ -109,15 +106,15 @@ class _ProjectDetailScreenState
         fundingStats = null;
       }
 
-      Map<String, dynamic>? myApplication;
+      Map<String, dynamic>? application;
 
       try {
-        myApplication =
+        application =
             await ProjectApplicationService.getMyApplication(
           widget.projectId,
         );
       } catch (_) {
-        myApplication = null;
+        application = null;
       }
 
       if (!mounted) return;
@@ -127,7 +124,7 @@ class _ProjectDetailScreenState
         _liked = liked;
         _bookmarked = bookmarked;
         _fundingStats = fundingStats;
-        _myApplication = myApplication;
+        _myApplication = application;
         _loading = false;
       });
 
@@ -265,7 +262,7 @@ class _ProjectDetailScreenState
               const SizedBox(height: 24),
               _skeleton(height: 100),
               const SizedBox(height: 18),
-              _skeleton(height: 100),
+              _skeleton(height: 120),
             ]),
           ),
         ),
@@ -372,10 +369,10 @@ class _ProjectDetailScreenState
     final teamSize =
         project['team_size'];
 
-    final fundingGoal =
+    final fallbackFundingGoal =
         project['funding_goal'];
 
-    final fundingCurrency =
+    final fallbackCurrency =
         project['funding_currency']?.toString();
 
     return FadeTransition(
@@ -474,14 +471,11 @@ class _ProjectDetailScreenState
                     teamSize,
                     visibility,
                   ),
-                  if (_fundingStats != null ||
-                      fundingGoal != null) ...[
-                    const SizedBox(height: 18),
-                    _buildFundingCard(
-                      fundingGoal,
-                      fundingCurrency,
-                    ),
-                  ],
+                  const SizedBox(height: 18),
+                  _buildFundingCard(
+                    fallbackFundingGoal,
+                    fallbackCurrency,
+                  ),
                   const SizedBox(height: 28),
                   _buildCollaborateButton(),
                 ]),
@@ -978,8 +972,7 @@ class _ProjectDetailScreenState
                       BorderRadius.circular(15),
                 ),
                 child: const Icon(
-                  Icons
-                      .account_balance_wallet_outlined,
+                  Icons.account_balance_wallet_outlined,
                   color: Colors.black,
                 ),
               ),
@@ -1027,7 +1020,7 @@ class _ProjectDetailScreenState
           ),
           const SizedBox(height: 16),
           TweenAnimationBuilder<double>(
-            tween: Tween(
+            tween: Tween<double>(
               begin: 0,
               end: progress,
             ),
@@ -1185,9 +1178,6 @@ class _ProjectDetailScreenState
       return const SizedBox.shrink();
     }
 
-    final formatted =
-        _formatAmount(amount);
-
     final currencyLabel =
         currency?.trim().isNotEmpty == true
             ? currency!.trim().toUpperCase()
@@ -1229,7 +1219,8 @@ class _ProjectDetailScreenState
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$formatted $currencyLabel',
+                  '${_formatAmount(amount)} '
+                  '$currencyLabel',
                   style: const TextStyle(
                     color: _yellow,
                     fontSize: 20,
@@ -1245,20 +1236,15 @@ class _ProjectDetailScreenState
   }
 
   String _formatAmount(double amount) {
-    final rounded = amount.round();
-
-    return rounded.toString().replaceAllMapped(
+    return amount.round().toString().replaceAllMapped(
           RegExp(r'\B(?=(\d{3})+(?!\d))'),
           (match) => ' ',
         );
   }
 
   Widget _buildCollaborateButton() {
-    final application =
-        _myApplication;
-
     final status =
-        application?['status']
+        _myApplication?['status']
             ?.toString()
             .toLowerCase();
 
@@ -1276,7 +1262,7 @@ class _ProjectDetailScreenState
         icon: Icons.info_outline,
         title: 'Candidature refusée',
         message:
-            'Tu peux continuer à suivre le projet.',
+            'Ta candidature a été refusée.',
       );
     }
 
@@ -1406,332 +1392,288 @@ class _ProjectDetailScreenState
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (sheetContext) {
-          return StatefulBuilder(
-            builder:
-                (context, setSheetState) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(
-                    context,
-                  ).viewInsets.bottom,
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(
+                sheetContext,
+              ).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(sheetContext)
+                    .scaffoldBackgroundColor,
+                borderRadius:
+                    const BorderRadius.vertical(
+                  top: Radius.circular(28),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .scaffoldBackgroundColor,
-                    borderRadius:
-                        const BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    22,
+                    12,
+                    22,
+                    24,
                   ),
-                  child: SafeArea(
-                    top: false,
-                    child: SingleChildScrollView(
-                      padding:
-                          const EdgeInsets.fromLTRB(
-                        22,
-                        12,
-                        22,
-                        24,
-                      ),
-                      child: Form(
-                        key: formKey,
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 5,
+                            decoration:
+                                BoxDecoration(
+                              color: Theme.of(
+                                sheetContext,
+                              )
+                                  .colorScheme
+                                  .outline,
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        Row(
                           children: [
-                            Center(
-                              child: Container(
-                                width: 42,
-                                height: 5,
-                                decoration:
-                                    BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  )
-                                      .colorScheme
-                                      .outline,
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration:
-                                      BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                      15,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons
-                                        .handshake_outlined,
-                                    color: _yellow,
-                                  ),
-                                ),
-                                const SizedBox(width: 13),
-                                const Expanded(
-                                  child: Text(
-                                    'Proposer sa collaboration',
-                                    style: TextStyle(
-                                      fontSize: 21,
-                                      fontWeight:
-                                          FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Présente rapidement ce que '
-                              'tu peux apporter au projet.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    )
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                    height: 1.4,
-                                  ),
-                            ),
-                            const SizedBox(height: 24),
-                            TextFormField(
-                              controller:
-                                  roleController,
-                              textInputAction:
-                                  TextInputAction.next,
+                            Container(
+                              width: 48,
+                              height: 48,
                               decoration:
-                                  InputDecoration(
-                                labelText:
-                                    'Rôle souhaité',
-                                hintText:
-                                    'Ex. Développeur Flutter',
-                                prefixIcon:
-                                    const Icon(
-                                  Icons.badge_outlined,
-                                ),
-                                border:
-                                    OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    16,
-                                  ),
-                                ),
+                                  BoxDecoration(
+                                color: Colors.black,
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(15),
                               ),
-                              validator: (value) {
-                                if (value == null ||
-                                    value.trim().isEmpty) {
-                                  return 'Indique le rôle que tu souhaites occuper.';
-                                }
-
-                                if (value.trim().length <
-                                    2) {
-                                  return 'Le rôle est trop court.';
-                                }
-
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller:
-                                  messageController,
-                              minLines: 5,
-                              maxLines: 8,
-                              maxLength: 1200,
-                              textInputAction:
-                                  TextInputAction.newline,
-                              decoration:
-                                  InputDecoration(
-                                labelText:
-                                    'Message de motivation',
-                                hintText:
-                                    'Explique pourquoi tu souhaites '
-                                    'rejoindre le projet...',
-                                alignLabelWithHint: true,
-                                prefixIcon:
-                                    const Padding(
-                                  padding:
-                                      EdgeInsets.only(
-                                    bottom: 72,
-                                  ),
-                                  child: Icon(
-                                    Icons
-                                        .description_outlined,
-                                  ),
-                                ),
-                                border:
-                                    OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    16,
-                                  ),
-                                ),
+                              child: const Icon(
+                                Icons
+                                    .handshake_outlined,
+                                color: _yellow,
                               ),
-                              validator: (value) {
-                                if (value == null ||
-                                    value.trim().isEmpty) {
-                                  return 'Ajoute un court message de motivation.';
-                                }
-
-                                if (value.trim().length <
-                                    10) {
-                                  return 'Le message doit contenir au moins 10 caractères.';
-                                }
-
-                                return null;
-                              },
                             ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    _applicationLoading
-                                        ? null
-                                        : () async {
-                                            if (!formKey
-                                                .currentState!
-                                                .validate()) {
-                                              return;
-                                            }
-
-                                            setSheetState(() {
-                                              _applicationLoading =
-                                                  true;
-                                            });
-
-                                            try {
-                                              final application =
-                                                  await ProjectApplicationService
-                                                      .submitApplication(
-                                                projectId:
-                                                    widget.projectId,
-                                                proposedRole:
-                                                    roleController
-                                                        .text,
-                                                coverMessage:
-                                                    messageController
-                                                        .text,
-                                              );
-
-                                              if (!context
-                                                  .mounted) {
-                                                return;
-                                              }
-
-                                              Navigator.of(
-                                                context,
-                                              ).pop(
-                                                true,
-                                              );
-
-                                              if (mounted) {
-                                                setState(() {
-                                                  _myApplication =
-                                                      application;
-                                                  _applicationLoading =
-                                                      false;
-                                                });
-                                              }
-                                            } catch (error) {
-                                              setSheetState(() {
-                                                _applicationLoading =
-                                                    false;
-                                              });
-
-                                              if (!context
-                                                  .mounted) {
-                                                return;
-                                              }
-
-                                              ScaffoldMessenger
-                                                  .of(
-                                                context,
-                                              )
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                  content:
-                                                      Text(
-                                                    _applicationErrorMessage(
-                                                      error,
-                                                    ),
-                                                  ),
-                                                  behavior:
-                                                      SnackBarBehavior
-                                                          .floating,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                style:
-                                    ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      _yellow,
-                                  foregroundColor:
-                                      Colors.black,
-                                  elevation: 0,
-                                  shape:
-                                      RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                      16,
-                                    ),
-                                  ),
-                                ),
-                                icon: _applicationLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child:
-                                            CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color:
-                                              Colors.black,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.send_outlined,
-                                      ),
-                                label: Text(
-                                  _applicationLoading
-                                      ? 'Envoi...'
-                                      : 'Envoyer ma candidature',
-                                  style:
-                                      const TextStyle(
-                                    fontWeight:
-                                        FontWeight.w900,
-                                  ),
+                            const SizedBox(width: 13),
+                            const Expanded(
+                              child: Text(
+                                'Proposer sa collaboration',
+                                style: TextStyle(
+                                  fontSize: 21,
+                                  fontWeight:
+                                      FontWeight.w900,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Présente ce que tu peux '
+                          'apporter à ce projet.',
+                          style: Theme.of(
+                            sheetContext,
+                          )
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  sheetContext,
+                                )
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                        ),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: roleController,
+                          textInputAction:
+                              TextInputAction.next,
+                          decoration:
+                              InputDecoration(
+                            labelText: 'Rôle souhaité',
+                            hintText:
+                                'Ex. Développeur Flutter',
+                            prefixIcon:
+                                const Icon(
+                              Icons.badge_outlined,
+                            ),
+                            border:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(16),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null ||
+                                value.trim().isEmpty) {
+                              return 'Indique le rôle souhaité.';
+                            }
+
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller:
+                              messageController,
+                          minLines: 5,
+                          maxLines: 8,
+                          maxLength: 1200,
+                          decoration:
+                              InputDecoration(
+                            labelText:
+                                'Message de motivation',
+                            hintText:
+                                'Explique pourquoi tu souhaites '
+                                'rejoindre le projet...',
+                            alignLabelWithHint: true,
+                            prefixIcon:
+                                const Padding(
+                              padding:
+                                  EdgeInsets.only(
+                                bottom: 72,
+                              ),
+                              child: Icon(
+                                Icons
+                                    .description_outlined,
+                              ),
+                            ),
+                            border:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(16),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null ||
+                                value.trim().length <
+                                    10) {
+                              return 'Le message doit contenir au moins 10 caractères.';
+                            }
+
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                _applicationLoading
+                                    ? null
+                                    : () async {
+                                        if (!formKey
+                                            .currentState!
+                                            .validate()) {
+                                          return;
+                                        }
+
+                                        setState(() {
+                                          _applicationLoading =
+                                              true;
+                                        });
+
+                                        try {
+                                          final application =
+                                              await ProjectApplicationService
+                                                  .submitApplication(
+                                            projectId:
+                                                widget.projectId,
+                                            proposedRole:
+                                                roleController
+                                                    .text,
+                                            coverMessage:
+                                                messageController
+                                                    .text,
+                                          );
+
+                                          if (!mounted) {
+                                            return;
+                                          }
+
+                                          setState(() {
+                                            _myApplication =
+                                                application;
+                                            _applicationLoading =
+                                                false;
+                                          });
+
+                                          Navigator.of(
+                                            sheetContext,
+                                          ).pop(true);
+                                        } catch (error) {
+                                          if (!mounted) {
+                                            return;
+                                          }
+
+                                          setState(() {
+                                            _applicationLoading =
+                                                false;
+                                          });
+
+                                          _showMessage(
+                                            _applicationErrorMessage(
+                                              error,
+                                            ),
+                                          );
+                                        }
+                                      },
+                            style:
+                                ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  _yellow,
+                              foregroundColor:
+                                  Colors.black,
+                              elevation: 0,
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(16),
+                              ),
+                            ),
+                            icon: _applicationLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color:
+                                          Colors.black,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.send_outlined,
+                                  ),
+                            label: Text(
+                              _applicationLoading
+                                  ? 'Envoi...'
+                                  : 'Envoyer ma candidature',
+                              style:
+                                  const TextStyle(
+                                fontWeight:
+                                    FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           );
         },
       );
@@ -1756,20 +1698,58 @@ class _ProjectDetailScreenState
   String _applicationErrorMessage(
     Object error,
   ) {
-    final message = error.toString();
+    final text = error.toString().toLowerCase();
 
-    if (message.contains(
-      'duplicate',
-    )) {
-      return 'Tu as déjà envoyé une candidature pour ce projet.';
+    if (text.contains('already') ||
+        text.contains('duplicate') ||
+        text.contains('unique')) {
+      return 'Tu as déjà envoyé une candidature '
+          'pour ce projet.';
     }
 
-    if (message.contains(
-      'Connecte',
-    )) {
-      return 'Connecte-toi pour proposer ta collaboration.';
+    if (text.contains('connect') ||
+        text.contains('auth')) {
+      return 'Connecte-toi pour proposer '
+          'ta collaboration.';
     }
 
-    return 'Impossible d’envoyer la candidature. Réessaie.';
+    return 'Impossible d’envoyer la candidature. '
+        'Réessaie.';
+  }
+    Future<void> _refreshFunding() async {
+    try {
+      final stats =
+          await ProjectFundingService.getStats(
+        widget.projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _fundingStats = stats;
+      });
+    } catch (_) {
+      // Le financement ne doit pas empêcher
+      // l'affichage du reste de la page.
+    }
+  }
+
+  Future<void> _refreshApplication() async {
+    try {
+      final application =
+          await ProjectApplicationService
+              .getMyApplication(
+        widget.projectId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _myApplication = application;
+      });
+    } catch (_) {
+      // L'état de candidature reste inchangé
+      // si Supabase ne répond pas.
+    }
   }
 }
