@@ -193,12 +193,12 @@ class _CreateProjectScreenState
     return 'Impossible de créer le projet. '
         'Vérifie les informations puis réessaie.';
   }
-    InputDecoration _inputDecoration({
+      InputDecoration _inputDecoration({
     required String label,
     String? hint,
     IconData? icon,
   }) {
-    final yellow = const Color(0xFFFFD54A);
+    const yellow = Color(0xFFFFD54A);
 
     return InputDecoration(
       labelText: label,
