@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../data/project_application_service.dart';
+import '../data/project_engagement_service.dart';
+import '../data/project_funding_service.dart';
+import '../data/project_service.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   const ProjectDetailScreen({
@@ -490,7 +489,6 @@ class _ProjectDetailScreenState
                   if (!_isProjectOwner) ...[
                     const SizedBox(height: 14),
                     _buildCollaborateButton(),
-                  ],
                   ],
                 ]),
               ),
