@@ -50,7 +50,24 @@ class ProjectDiscoveryService {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> discoverProjects({
+  static Future<List<Map<String, dynamic>>>
+      getProjectsForFilter({
+    required ProjectDiscoveryFilter filter,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final projects = await getProjectFeed(
+      limit: limit,
+      offset: offset,
+    );
+
+    return _applyClientFilter(
+      projects,
+      filter,
+    );
+  }
+    static Future<List<Map<String, dynamic>>>
+      discoverProjects({
     String? query,
     ProjectDiscoveryFilter filter =
         ProjectDiscoveryFilter.forYou,
@@ -60,19 +77,17 @@ class ProjectDiscoveryService {
     int offset = 0,
   }) async {
     final normalizedQuery = _nullableText(query);
-    final normalizedCategory = _nullableText(category);
-    final normalizedCountry = _nullableText(country);
 
     final hasSearch =
         normalizedQuery != null ||
-        normalizedCategory != null ||
-        normalizedCountry != null;
+        _nullableText(category) != null ||
+        _nullableText(country) != null;
 
     if (hasSearch) {
       final projects = await searchProjects(
         query: normalizedQuery,
-        category: normalizedCategory,
-        country: normalizedCountry,
+        category: category,
+        country: country,
         limit: limit,
         offset: offset,
       );
@@ -90,20 +105,39 @@ class ProjectDiscoveryService {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getProjectsForFilter({
-    required ProjectDiscoveryFilter filter,
-    int limit = 20,
-    int offset = 0,
-  }) async {
-    final projects = await getProjectFeed(
-      limit: limit,
-      offset: offset,
-    );
+  static List<Map<String, dynamic>> _normalizeResponse(
+    dynamic response, {
+    required String functionName,
+  }) {
+    if (response == null) {
+      return [];
+    }
 
-    return _applyClientFilter(
-      projects,
-      filter,
-    );
+    if (response is! List) {
+      throw FormatException(
+        'Réponse invalide de $functionName.',
+      );
+    }
+
+    return response
+        .whereType<Map>()
+        .map(
+          (item) => Map<String, dynamic>.from(item),
+        )
+        .toList();
+  }
+
+  static String? _nullableText(
+    String? value,
+  ) {
+    final normalized = value?.trim();
+
+    if (normalized == null ||
+        normalized.isEmpty) {
+      return null;
+    }
+
+    return normalized;
   }
 
   static List<Map<String, dynamic>> _applyClientFilter(
@@ -145,8 +179,7 @@ class ProjectDiscoveryService {
         return _sortByNearby(result);
     }
   }
-
-  static List<Map<String, dynamic>> _sortByScore(
+    static List<Map<String, dynamic>> _sortByScore(
     List<Map<String, dynamic>> projects,
   ) {
     projects.sort((a, b) {
@@ -177,7 +210,8 @@ class ProjectDiscoveryService {
     return projects;
   }
 
-  static List<Map<String, dynamic>> _sortByNumericField(
+  static List<Map<String, dynamic>>
+      _sortByNumericField(
     List<Map<String, dynamic>> projects,
     String field,
   ) {
@@ -209,7 +243,8 @@ class ProjectDiscoveryService {
     return projects;
   }
 
-  static List<Map<String, dynamic>> _sortByRecentActivity(
+  static List<Map<String, dynamic>>
+      _sortByRecentActivity(
     List<Map<String, dynamic>> projects,
   ) {
     projects.sort((a, b) {
@@ -242,45 +277,19 @@ class ProjectDiscoveryService {
     return projects;
   }
 
-  static List<Map<String, dynamic>> _sortByNearby(
+  static List<Map<String, dynamic>>
+      _sortByNearby(
     List<Map<String, dynamic>> projects,
   ) {
+    /*
+     * La vraie proximité géographique sera branchée
+     * lorsque TCHAKA disposera des coordonnées
+     * utilisateur/projet nécessaires.
+     *
+     * Pour l'instant, on conserve un classement
+     * pertinent plutôt que d'inventer une distance.
+     */
     return _sortByScore(projects);
-  }
-
-  static List<Map<String, dynamic>> _normalizeResponse(
-    dynamic response, {
-    required String functionName,
-  }) {
-    if (response == null) {
-      return [];
-    }
-
-    if (response is! List) {
-      throw FormatException(
-        'Réponse invalide de $functionName.',
-      );
-    }
-
-    return response
-        .whereType<Map>()
-        .map(
-          (item) => Map<String, dynamic>.from(item),
-        )
-        .toList();
-  }
-
-  static String? _nullableText(
-    String? value,
-  ) {
-    final normalized = value?.trim();
-
-    if (normalized == null ||
-        normalized.isEmpty) {
-      return null;
-    }
-
-    return normalized;
   }
 
   static double _numberValue(
