@@ -12,16 +12,17 @@ class TchakaProjectCard extends StatefulWidget {
     required this.onLike,
     required this.onBookmark,
     required this.onFollow,
+    this.onTap,
   });
 
   final Map<String, dynamic> project;
   final bool liked;
   final bool bookmarked;
   final bool followed;
-
   final VoidCallback onLike;
   final VoidCallback onBookmark;
   final VoidCallback onFollow;
+  final VoidCallback? onTap;
 
   @override
   State<TchakaProjectCard> createState() =>
@@ -142,23 +143,33 @@ class _TchakaProjectCardState
     );
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 20,
+  margin: const EdgeInsets.only(
+    bottom: 20,
+  ),
+  elevation: 0,
+  color: TchakaTheme.surface,
+  clipBehavior: Clip.antiAlias,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(
+      TchakaTheme.radiusLarge,
+    ),
+    side: BorderSide(
+      color: Colors.white.withValues(
+        alpha: 0.06,
       ),
-      elevation: 0,
-      color: TchakaTheme.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          TchakaTheme.radiusLarge,
-        ),
-        side: BorderSide(
-          color: Colors.white.withValues(
-            alpha: 0.06,
-          ),
-        ),
+    ),
+  ),
+  child: InkWell(
+    onTap: widget.onTap,
+    borderRadius: BorderRadius.circular(
+      TchakaTheme.radiusLarge,
+    ),
+    child: Column(
+              ],
       ),
-      child: Column(
+    ),
+  ),
+);
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
