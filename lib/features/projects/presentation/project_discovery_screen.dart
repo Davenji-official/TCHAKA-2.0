@@ -134,8 +134,7 @@ class _ProjectDiscoveryScreenState
       }
     }
   }
-
-  Future<void> _toggleLike(
+    Future<void> _toggleLike(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(
@@ -177,7 +176,8 @@ class _ProjectDiscoveryScreenState
       );
     }
   }
-    Future<void> _toggleBookmark(
+
+  Future<void> _toggleBookmark(
     Map<String, dynamic> project,
   ) async {
     final projectId = _stringValue(
@@ -301,12 +301,13 @@ class _ProjectDiscoveryScreenState
           ),
         ],
       ),
-      body: RefreshIndicator(
+            body: RefreshIndicator(
         onRefresh: () => _loadProjects(
           filter: _filters[_selectedCategory],
         ),
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics:
+              const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -337,7 +338,8 @@ class _ProjectDiscoveryScreenState
                       delay: Duration(
                         milliseconds: 70 * index,
                       ),
-                      child: const _ProjectSkeleton(),
+                      child:
+                          const _ProjectSkeleton(),
                     );
                   },
                 ),
@@ -382,38 +384,51 @@ class _ProjectDiscoveryScreenState
                         milliseconds: 70 * index,
                       ),
                       child: TchakaProjectCard(
-  project: project,
-  liked:
-      _likedProjects[projectId] ??
-          false,
-  bookmarked:
-      _bookmarkedProjects[
-              projectId] ??
-          false,
-  followed:
-      _followedCreators[
-              creatorId] ??
-          false,
-  onLike: () =>
-      _toggleLike(project),
-  onBookmark: () =>
-      _toggleBookmark(project),
-  onFollow: () =>
-      _toggleFollow(project),
-  onTap: projectId.isEmpty
-      ? null
-      : () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  ProjectDetailScreen(
-                projectId: projectId,
+                        project: project,
+                        liked:
+                            _likedProjects[
+                                    projectId] ??
+                                false,
+                        bookmarked:
+                            _bookmarkedProjects[
+                                    projectId] ??
+                                false,
+                        followed:
+                            _followedCreators[
+                                    creatorId] ??
+                                false,
+                        onLike: () =>
+                            _toggleLike(project),
+                        onBookmark: () =>
+                            _toggleBookmark(project),
+                        onFollow: () =>
+                            _toggleFollow(project),
+                        onTap: projectId.isEmpty
+                            ? null
+                            : () {
+                                Navigator.of(
+                                  context,
+                                ).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ProjectDetailScreen(
+                                      projectId:
+                                          projectId,
+                                    ),
+                                  ),
+                                );
+                              },
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          );
-        },
-),
-  Widget _buildHeader() {
+          ],
+        ),
+      ),
+    );
+  }
+    Widget _buildHeader() {
     final selectedLabel =
         _categories[_selectedCategory];
 
@@ -442,7 +457,8 @@ class _ProjectDiscoveryScreenState
           readOnly: true,
           onTap: () {},
           decoration: InputDecoration(
-            hintText: 'Rechercher un projet...',
+            hintText:
+                'Rechercher un projet...',
             prefixIcon: const Icon(
               Icons.search_rounded,
             ),
@@ -496,12 +512,10 @@ class _ProjectDiscoveryScreenState
             const EdgeInsets.symmetric(
           horizontal: 20,
         ),
-        scrollDirection:
-            Axis.horizontal,
+        scrollDirection: Axis.horizontal,
         itemCount: _categories.length,
-        separatorBuilder:
-            (_, __) =>
-                const SizedBox(width: 8),
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final selected =
               index == _selectedCategory;
@@ -527,11 +541,9 @@ class _ProjectDiscoveryScreenState
       ),
     );
   }
-
-  Widget _buildError() {
+    Widget _buildError() {
     return Padding(
-      padding:
-          const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.center,
@@ -553,10 +565,9 @@ class _ProjectDiscoveryScreenState
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: () =>
-                _loadProjects(
-              filter: _filters[
-                  _selectedCategory],
+            onPressed: () => _loadProjects(
+              filter:
+                  _filters[_selectedCategory],
             ),
             icon: const Icon(
               Icons.refresh_rounded,
@@ -571,8 +582,7 @@ class _ProjectDiscoveryScreenState
 
   Widget _buildEmpty() {
     return Padding(
-      padding:
-          const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.center,
@@ -599,10 +609,9 @@ class _ProjectDiscoveryScreenState
           ),
           const SizedBox(height: 20),
           OutlinedButton.icon(
-            onPressed: () =>
-                _loadProjects(
-              filter: _filters[
-                  _selectedCategory],
+            onPressed: () => _loadProjects(
+              filter:
+                  _filters[_selectedCategory],
             ),
             icon: const Icon(
               Icons.refresh_rounded,
@@ -615,6 +624,7 @@ class _ProjectDiscoveryScreenState
     );
   }
 }
+
 class _ProjectSkeleton
     extends StatelessWidget {
   const _ProjectSkeleton();
@@ -643,8 +653,7 @@ class _ProjectSkeleton
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      margin:
-          const EdgeInsets.only(
+      margin: const EdgeInsets.only(
         bottom: 18,
       ),
       child: Column(
@@ -663,43 +672,33 @@ class _ProjectSkeleton
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                box(
+                                box(
                   height: 18,
                   width: 90,
                 ),
-                const SizedBox(
-                  height: 14,
-                ),
+                const SizedBox(height: 14),
                 box(
                   height: 24,
                   width: 220,
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 10),
                 box(
                   height: 16,
                   width: double.infinity,
                 ),
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
                 box(
                   height: 16,
                   width: 250,
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     box(
                       height: 34,
                       width: 90,
                     ),
-                    const SizedBox(
-                      width: 10,
-                    ),
+                    const SizedBox(width: 10),
                     box(
                       height: 34,
                       width: 110,
