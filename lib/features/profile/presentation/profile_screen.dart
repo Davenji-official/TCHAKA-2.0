@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../projects/data/project_engagement_service.dart';
 import '../../projects/data/project_service.dart';
 import '../../projects/presentation/project_detail_screen.dart';
@@ -56,12 +59,14 @@ class _PublicProfileScreenState
   }
 
   Future<void> _loadProfile() async {
-    setState(() {
-      _loading = true;
-      _skillsLoading = true;
-      _projectsLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _skillsLoading = true;
+        _projectsLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final profileId = _profileId;
@@ -130,9 +135,11 @@ class _PublicProfileScreenState
   Future<void> _loadSkills(
     String profileId,
   ) async {
-    setState(() {
-      _skillsLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _skillsLoading = true;
+      });
+    }
 
     try {
       final skills =
@@ -159,9 +166,11 @@ class _PublicProfileScreenState
   Future<void> _loadProjects(
     String profileId,
   ) async {
-    setState(() {
-      _projectsLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _projectsLoading = true;
+      });
+    }
 
     try {
       final projects =
@@ -364,7 +373,8 @@ class _PublicProfileScreenState
       ),
     );
   }
-    Widget _buildError() {
+
+  Widget _buildError() {
     return ListView(
       physics:
           const AlwaysScrollableScrollPhysics(),
@@ -391,14 +401,14 @@ class _PublicProfileScreenState
           child: FilledButton.icon(
             onPressed: _loadProfile,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label:
+                const Text('Réessayer'),
           ),
         ),
       ],
     );
   }
-
-  Widget _buildProfile() {
+    Widget _buildProfile() {
     final profile = _profile;
 
     if (profile == null) {
@@ -422,17 +432,22 @@ class _PublicProfileScreenState
     }
 
     final username =
-        profile['username'] as String?;
+        profile['username']?.toString();
+
     final fullName =
-        profile['full_name'] as String?;
+        profile['full_name']?.toString();
+
     final avatarUrl =
-        profile['avatar_url'] as String?;
+        profile['avatar_url']?.toString();
+
     final bio =
-        profile['bio'] as String?;
+        profile['bio']?.toString();
+
     final country =
-        profile['country'] as String?;
+        profile['country']?.toString();
+
     final city =
-        profile['city'] as String?;
+        profile['city']?.toString();
 
     final isVerified =
         profile['is_verified'] == true;
@@ -597,7 +612,8 @@ class _PublicProfileScreenState
                   icon: const Icon(
                     Icons.share_outlined,
                   ),
-                  label: const Text('Partager'),
+                  label:
+                      const Text('Partager'),
                 ),
               ),
             ],
@@ -637,7 +653,8 @@ class _PublicProfileScreenState
       ],
     );
   }
-    Widget _buildSkillsSection() {
+
+  Widget _buildSkillsSection() {
     if (_skillsLoading) {
       return const Card(
         child: Padding(
@@ -709,8 +726,7 @@ class _PublicProfileScreenState
       ),
     );
   }
-
-  Widget _buildSkillRow(
+    Widget _buildSkillRow(
     Map<String, dynamic> skill,
   ) {
     final name = _skillName(skill);
@@ -721,7 +737,9 @@ class _PublicProfileScreenState
 
     return Padding(
       padding:
-          const EdgeInsets.symmetric(vertical: 8),
+          const EdgeInsets.symmetric(
+        vertical: 8,
+      ),
       child: Row(
         children: [
           CircleAvatar(
@@ -825,129 +843,130 @@ class _PublicProfileScreenState
           _projects.map(_buildProjectCard).toList(),
     );
   }
-    Widget _buildProjectCard(
-  Map<String, dynamic> project,
-) {
-  final title =
-      project['title']?.toString() ??
-          'Projet sans titre';
 
-  final description =
-      project['description']?.toString();
+  Widget _buildProjectCard(
+    Map<String, dynamic> project,
+  ) {
+    final title =
+        project['title']?.toString() ??
+            'Projet sans titre';
 
-  final category =
-      project['category']?.toString();
+    final description =
+        project['description']?.toString();
 
-  final coverImageUrl =
-      project['cover_image_url']?.toString();
+    final category =
+        project['category']?.toString();
 
-  final projectId =
-      project['id']?.toString();
+    final coverImageUrl =
+        project['cover_image_url']?.toString();
 
-  return Card(
-    margin:
-        const EdgeInsets.only(bottom: 12),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: projectId == null ||
-              projectId.trim().isEmpty
-          ? null
-          : () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ProjectDetailScreen(
-                    projectId: projectId,
-                  ),
-                ),
-              );
-            },
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          if (coverImageUrl != null &&
-              coverImageUrl.trim().isNotEmpty)
-            AspectRatio(
-              aspectRatio: 16 / 8,
-              child: Image.network(
-                coverImageUrl,
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (context, error, stackTrace) {
-                  return Container(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    child: const Center(
-                      child: Icon(
-                        Icons
-                            .image_not_supported_outlined,
-                        size: 36,
-                      ),
+    final projectId =
+        project['id']?.toString();
+
+    return Card(
+      margin:
+          const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: projectId == null ||
+                projectId.trim().isEmpty
+            ? null
+            : () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ProjectDetailScreen(
+                      projectId: projectId,
                     ),
-                  );
-                },
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium,
-                ),
-                if (category != null &&
-                    category.trim().isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Chip(
-                    label: Text(category),
-                    visualDensity:
-                        VisualDensity.compact,
                   ),
-                ],
-                if (description != null &&
-                    description.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    description,
-                    maxLines: 3,
-                    overflow:
-                        TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.public,
-                      size: 18,
+                );
+              },
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            if (coverImageUrl != null &&
+                coverImageUrl.trim().isNotEmpty)
+              AspectRatio(
+                aspectRatio: 16 / 8,
+                child: Image.network(
+                  coverImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) {
+                    return Container(
                       color: Theme.of(context)
                           .colorScheme
-                          .primary,
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Projet public',
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.chevron_right,
+                          .surfaceContainerHighest,
+                      child: const Center(
+                        child: Icon(
+                          Icons
+                              .image_not_supported_outlined,
+                          size: 36,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Padding(
+              padding:
+                  const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium,
+                  ),
+                  if (category != null &&
+                      category.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Chip(
+                      label: Text(category),
+                      visualDensity:
+                          VisualDensity.compact,
                     ),
                   ],
-                ),
-              ],
+                  if (description != null &&
+                      description.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      maxLines: 3,
+                      overflow:
+                          TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.public,
+                        size: 18,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary,
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Projet public',
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.chevron_right,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-  );
+    );
   }
 }
