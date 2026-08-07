@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
+import '../features/funding/presentation/funding_screen.dart';
 import '../features/messaging/presentation/chat_screen.dart';
 import '../features/messaging/presentation/messages_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
@@ -14,33 +15,16 @@ import '../features/projects/presentation/project_discovery_screen.dart';
 final GoRouter tchakaRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const AuthGate(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/register',
-      builder: (context, state) => const RegisterScreen(),
-    ),
-    GoRoute(
-      path: '/notifications',
-      builder: (context, state) => const NotificationsScreen(),
-    ),
-    GoRoute(
-      path: '/messages',
-      builder: (context, state) => const MessagesScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const AuthGate()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+    GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+    GoRoute(path: '/messages', builder: (context, state) => const MessagesScreen()),
     GoRoute(
       path: '/messages/:conversationId',
       builder: (context, state) {
         final conversationId = state.pathParameters['conversationId'];
-        if (conversationId == null || conversationId.isEmpty) {
-          return const MessagesScreen();
-        }
+        if (conversationId == null || conversationId.isEmpty) return const MessagesScreen();
         return ChatScreen(conversationId: conversationId);
       },
     ),
@@ -53,23 +37,27 @@ final GoRouter tchakaRouter = GoRouter(
       builder: (context, state) => const CreateProjectScreen(),
     ),
     GoRoute(
-      path: '/projects/:projectId',
+      path: '/projects/:projectId/funding',
       builder: (context, state) {
         final projectId = state.pathParameters['projectId'];
-        if (projectId == null || projectId.isEmpty) {
-          return const ProjectDiscoveryScreen();
-        }
-        return ProjectDetailScreen(projectId: projectId);
+        if (projectId == null || projectId.isEmpty) return const ProjectDiscoveryScreen();
+        return FundingScreen(projectId: projectId);
       },
     ),
     GoRoute(
       path: '/projects/:projectId/applications',
       builder: (context, state) {
         final projectId = state.pathParameters['projectId'];
-        if (projectId == null || projectId.isEmpty) {
-          return const ProjectDiscoveryScreen();
-        }
+        if (projectId == null || projectId.isEmpty) return const ProjectDiscoveryScreen();
         return ProjectApplicationsScreen(projectId: projectId);
+      },
+    ),
+    GoRoute(
+      path: '/projects/:projectId',
+      builder: (context, state) {
+        final projectId = state.pathParameters['projectId'];
+        if (projectId == null || projectId.isEmpty) return const ProjectDiscoveryScreen();
+        return ProjectDetailScreen(projectId: projectId);
       },
     ),
   ],
