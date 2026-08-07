@@ -9,6 +9,7 @@ import '../features/funding/presentation/funding_screen.dart';
 import '../features/messaging/presentation/chat_screen.dart';
 import '../features/messaging/presentation/messages_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/profile/presentation/profile_screen.dart';
 import '../features/projects/presentation/create_project_screen.dart';
 import '../features/projects/presentation/project_applications_screen.dart';
 import '../features/projects/presentation/project_detail_screen.dart';
@@ -50,6 +51,20 @@ final GoRouter tchakaRouter = GoRouter(
     GoRoute(
       path: '/explore',
       builder: (context, state) => const ExploreScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const PublicProfileScreen(),
+    ),
+    GoRoute(
+      path: '/profile/:userId',
+      builder: (context, state) {
+        final userId = state.pathParameters['userId'];
+        if (userId == null || userId.isEmpty) {
+          return const PublicProfileScreen();
+        }
+        return PublicProfileScreen(userId: userId);
+      },
     ),
     GoRoute(
       path: '/projects',
