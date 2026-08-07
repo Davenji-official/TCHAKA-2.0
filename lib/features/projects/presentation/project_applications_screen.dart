@@ -1373,13 +1373,12 @@ Navigator.of(sheetContext).pop();
         applicationId,
       );
 
-      if (!mounted || !sheetContext.mounted) {
+if (!mounted || !sheetContext.mounted) {
   return;
 }
 
 _replaceApplication(updated);
 Navigator.of(sheetContext).pop();
-
       _showMessage(
         'Candidature refusée.',
       );
