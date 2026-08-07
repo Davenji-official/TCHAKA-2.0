@@ -32,8 +32,8 @@ class ProjectApplicationService {
 
     return Map<String, dynamic>.from(response);
   }
-  static Future<Map<String, dynamic>>
-      submitApplication({
+
+  static Future<Map<String, dynamic>> submitApplication({
     required String projectId,
     String? proposedRole,
     String? coverMessage,
@@ -78,8 +78,7 @@ class ProjectApplicationService {
     return Map<String, dynamic>.from(response);
   }
 
-  static Future<Map<String, dynamic>>
-      withdrawApplication(
+  static Future<Map<String, dynamic>> withdrawApplication(
     String applicationId,
   ) async {
     final userId = _currentUserId;
@@ -102,8 +101,8 @@ class ProjectApplicationService {
 
     return Map<String, dynamic>.from(response);
   }
-  static Future<List<Map<String, dynamic>>>
-      getProjectApplications(
+
+  static Future<List<Map<String, dynamic>>> getProjectApplications(
     String projectId,
   ) async {
     final userId = _currentUserId;
@@ -125,14 +124,12 @@ class ProjectApplicationService {
 
     return response
         .map<Map<String, dynamic>>(
-          (application) =>
-              Map<String, dynamic>.from(application),
+          (application) => Map<String, dynamic>.from(application),
         )
         .toList();
   }
 
-  static Future<Map<String, dynamic>>
-      reviewApplication({
+  static Future<Map<String, dynamic>> reviewApplication({
     required String applicationId,
     required String status,
   }) async {
@@ -158,24 +155,26 @@ class ProjectApplicationService {
 
     return Map<String, dynamic>.from(response);
   }
-  static Future<Map<String, dynamic>>
-      acceptApplication({
+
+  static Future<Map<String, dynamic>> acceptApplication({
     required String applicationId,
     String role = 'contributor',
   }) async {
+    // The database RPC derives the effective role from the application's
+    // proposed_role and only accepts p_application_id. Keep `role` in the
+    // Dart API for backward compatibility with existing callers, but do not
+    // send an unsupported RPC parameter to Supabase.
     final response = await _client.rpc(
       'accept_project_application',
       params: {
         'p_application_id': applicationId,
-        'p_role': role,
       },
     );
 
     return Map<String, dynamic>.from(response);
   }
 
-  static Future<Map<String, dynamic>>
-      rejectApplication(
+  static Future<Map<String, dynamic>> rejectApplication(
     String applicationId,
   ) async {
     final response = await _client.rpc(
