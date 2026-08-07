@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/messaging_service.dart';
 
@@ -33,9 +34,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _composer.dispose();
     _scrollController.dispose();
     final channel = _channel;
-    if (channel != null) {
-      MessagingService.unsubscribe(channel);
-    }
+    if (channel != null) MessagingService.unsubscribe(channel);
     super.dispose();
   }
 
@@ -71,31 +70,22 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _messages = messages);
       await MessagingService.markConversationRead(widget.conversationId);
       _scrollToBottom();
-    } catch (_) {
-      // Realtime refresh failures are intentionally non-blocking.
-    }
+    } catch (_) {}
   }
 
   Future<void> _sendMessage() async {
     final content = _composer.text.trim();
     if (content.isEmpty || _sending) return;
-
     _composer.clear();
     setState(() => _sending = true);
-
     try {
-      await MessagingService.sendMessage(
-        conversationId: widget.conversationId,
-        content: content,
-      );
+      await MessagingService.sendMessage(conversationId: widget.conversationId, content: content);
       await _refreshMessages();
     } catch (error) {
       if (!mounted) return;
       _composer.text = content;
       _composer.selection = TextSelection.collapsed(offset: content.length);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Envoi impossible : $error')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Envoi impossible : $error')));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -116,7 +106,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     controller.dispose();
     if (edited == null || edited.trim().isEmpty) return;
-
     try {
       await MessagingService.editMessage(messageId: message['id'].toString(), content: edited);
       await _refreshMessages();
@@ -139,7 +128,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
     if (confirmed != true) return;
-
     try {
       await MessagingService.deleteMessage(message['id'].toString());
       await _refreshMessages();
@@ -152,76 +140,45 @@ class _ChatScreenState extends State<ChatScreen> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
     });
   }
 
   String _time(String? raw) {
-    if (raw == null) return '';
-    final date = DateTime.tryParse(raw)?.toLocal();
+    final date = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
     if (date == null) return '';
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = MessagingServiceCurrentUser.id;
-
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     return Scaffold(
       appBar: AppBar(
         title: Text(_title),
-        actions: [
-          IconButton(
-            tooltip: 'Actualiser',
-            onPressed: _loadMessages,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
+        actions: [IconButton(tooltip: 'Actualiser', onPressed: _loadMessages, icon: const Icon(Icons.refresh_rounded))],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(child: _buildMessages(currentUserId)),
-            _buildComposer(),
-          ],
-        ),
+        child: Column(children: [Expanded(child: _buildMessages(currentUserId)), _buildComposer()]),
       ),
     );
   }
 
   Widget _buildMessages(String? currentUserId) {
     if (_loading) return const Center(child: CircularProgressIndicator());
-
     if (_error != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 14),
-              FilledButton.icon(onPressed: _loadMessages, icon: const Icon(Icons.refresh_rounded), label: const Text('Réessayer')),
-            ],
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: 14),
+            FilledButton.icon(onPressed: _loadMessages, icon: const Icon(Icons.refresh_rounded), label: const Text('Réessayer')),
+          ]),
         ),
       );
     }
-
-    if (_messages.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('Commence la conversation 👋', textAlign: TextAlign.center),
-        ),
-      );
-    }
+    if (_messages.isEmpty) return const Center(child: Text('Commence la conversation 👋'));
 
     return ListView.builder(
       controller: _scrollController,
@@ -229,11 +186,9 @@ class _ChatScreenState extends State<ChatScreen> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        final senderId = message['sender_id']?.toString();
-        final mine = currentUserId != null && senderId == currentUserId;
+        final mine = currentUserId != null && message['sender_id']?.toString() == currentUserId;
         final deleted = message['deleted_at'] != null;
         final content = deleted ? 'Message supprimé' : (message['content']?.toString() ?? '');
-
         return Align(
           alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
@@ -242,29 +197,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     await showModalBottomSheet<void>(
                       context: context,
                       showDragHandle: true,
-                      builder: (context) => SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.edit_outlined),
-                              title: const Text('Modifier'),
-                              onTap: () {
-                                Navigator.pop(context);
-                                _editMessage(message);
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.delete_outline_rounded),
-                              title: const Text('Supprimer'),
-                              onTap: () {
-                                Navigator.pop(context);
-                                _deleteMessage(message);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                      builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Modifier'), onTap: () { Navigator.pop(context); _editMessage(message); }),
+                        ListTile(leading: const Icon(Icons.delete_outline_rounded), title: const Text('Supprimer'), onTap: () { Navigator.pop(context); _deleteMessage(message); }),
+                      ])),
                     );
                   }
                 : null,
@@ -273,9 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: mine
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: mine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -283,27 +217,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   bottomRight: Radius.circular(mine ? 4 : 18),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    content,
-                    style: TextStyle(
-                      color: mine ? Theme.of(context).colorScheme.onPrimary : null,
-                      fontStyle: deleted ? FontStyle.italic : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_time(message['created_at']?.toString())}${message['edited_at'] != null ? ' · modifié' : ''}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: mine
-                              ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.72)
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
-              ),
+              child: Column(crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
+                Text(content, style: TextStyle(color: mine ? Theme.of(context).colorScheme.onPrimary : null, fontStyle: deleted ? FontStyle.italic : null)),
+                const SizedBox(height: 4),
+                Text('${_time(message['created_at']?.toString())}${message['edited_at'] != null ? ' · modifié' : ''}', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: mine ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.72) : Theme.of(context).colorScheme.onSurfaceVariant)),
+              ]),
             ),
           ),
         );
@@ -317,40 +235,12 @@ class _ChatScreenState extends State<ChatScreen> {
       color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: EdgeInsets.fromLTRB(12, 10, 12, 10 + MediaQuery.viewInsetsOf(context).bottom),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _composer,
-                minLines: 1,
-                maxLines: 5,
-                textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(
-                  hintText: 'Écrire un message...',
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              tooltip: 'Envoyer',
-              onPressed: _sending ? null : _sendMessage,
-              icon: _sending
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.send_rounded),
-            ),
-          ],
-        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(child: TextField(controller: _composer, minLines: 1, maxLines: 5, decoration: const InputDecoration(hintText: 'Écrire un message...', contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)))),
+          const SizedBox(width: 8),
+          IconButton.filled(tooltip: 'Envoyer', onPressed: _sending ? null : _sendMessage, icon: _sending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded)),
+        ]),
       ),
     );
   }
-}
-
-class MessagingServiceCurrentUser {
-  static String? get id => SupabaseCurrentUserBridge.id;
-}
-
-class SupabaseCurrentUserBridge {
-  static String? get id => null;
 }
