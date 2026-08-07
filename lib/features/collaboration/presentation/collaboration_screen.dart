@@ -91,12 +91,20 @@ class _CollaborationScreenState extends State<CollaborationScreen> {
             children: [
               Text('Changer le rôle', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
-              ..._roles.map(
-                (role) => RadioListTile<String>(
-                  value: role,
-                  groupValue: currentRole,
-                  title: Text(_roleLabel(role)),
-                  onChanged: (value) => Navigator.pop(context, value),
+              RadioGroup<String>(
+                groupValue: currentRole,
+                onChanged: (value) {
+                  if (value != null) Navigator.pop(context, value);
+                },
+                child: Column(
+                  children: _roles
+                      .map(
+                        (role) => RadioListTile<String>(
+                          value: role,
+                          title: Text(_roleLabel(role)),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ],
