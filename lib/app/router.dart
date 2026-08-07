@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/auth_gate.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
+import '../features/collaboration/presentation/collaboration_screen.dart';
 import '../features/explore/presentation/explore_screen.dart';
 import '../features/funding/presentation/funding_screen.dart';
 import '../features/messaging/presentation/chat_screen.dart';
@@ -76,6 +77,16 @@ final GoRouter tchakaRouter = GoRouter(
           return const ProjectDiscoveryScreen();
         }
         return ProjectApplicationsScreen(projectId: projectId);
+      },
+    ),
+    GoRoute(
+      path: '/projects/:projectId/collaboration',
+      builder: (context, state) {
+        final projectId = state.pathParameters['projectId'];
+        if (projectId == null || projectId.isEmpty) {
+          return const ProjectDiscoveryScreen();
+        }
+        return CollaborationScreen(projectId: projectId);
       },
     ),
     GoRoute(
