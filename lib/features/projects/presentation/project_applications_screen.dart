@@ -1373,7 +1373,9 @@ Navigator.of(sheetContext).pop();
         applicationId,
       );
 
-      if (!mounted) return;
+      if (!mounted || !sheetContext.mounted) {
+  return;
+      }
 
       _replaceApplication(updated);
 
