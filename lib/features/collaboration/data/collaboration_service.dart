@@ -30,7 +30,7 @@ class CollaborationService {
       },
     );
 
-    return Map<String, dynamic>.from(response as Map);
+    return _singleRow(response);
   }
 
   static Future<Map<String, dynamic>> removeMember({
@@ -45,6 +45,18 @@ class CollaborationService {
       },
     );
 
-    return Map<String, dynamic>.from(response as Map);
+    return _singleRow(response);
+  }
+
+  static Map<String, dynamic> _singleRow(dynamic response) {
+    if (response is Map) {
+      return Map<String, dynamic>.from(response);
+    }
+
+    if (response is List && response.isNotEmpty) {
+      return Map<String, dynamic>.from(response.first as Map);
+    }
+
+    throw const FormatException('Réponse de collaboration invalide.');
   }
 }
