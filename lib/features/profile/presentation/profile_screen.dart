@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../projects/data/project_engagement_service.dart';
 import '../../projects/data/project_service.dart';
 import '../../projects/presentation/project_detail_screen.dart';
+import '../data/follow_service.dart';
 import '../data/skill_service.dart';
+import 'follow_list_screen.dart';
 import 'skills_screen.dart';
 
 class PublicProfileScreen extends StatefulWidget {
@@ -36,6 +39,8 @@ class _PublicProfileScreenState
 
   bool _following = false;
   bool _followLoading = false;
+
+  Map<String, dynamic>? _stats;
 
   String? _error;
 
@@ -118,6 +123,7 @@ class _PublicProfileScreenState
       await Future.wait([
         _loadSkills(profileId),
         _loadProjects(profileId),
+        _loadStats(profileId),
       ]);
     } catch (_) {
       if (!mounted) return;
@@ -129,6 +135,20 @@ class _PublicProfileScreenState
         _error =
             'Impossible de charger ce profil.';
       });
+    }
+  }
+
+  Future<void> _loadStats(String profileId) async {
+    try {
+      final stats = await FollowService.getActivityStats(profileId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _stats = stats;
+      });
+    } catch (_) {
+      // Non-critical: the profile still renders without counts.
     }
   }
 
@@ -219,6 +239,17 @@ class _PublicProfileScreenState
       setState(() {
         _following = following;
         _followLoading = false;
+
+        if (_stats != null) {
+          final current =
+              (_stats!['followers_count'] as num?)?.toInt() ?? 0;
+          final updated = current + (following ? 1 : -1);
+
+          _stats = {
+            ..._stats!,
+            'followers_count': updated < 0 ? 0 : updated,
+          };
+        }
       });
     } catch (_) {
       if (!mounted) return;
@@ -569,6 +600,51 @@ class _PublicProfileScreenState
                   location,
                   textAlign: TextAlign.center,
                 ),
+              ),
+            ],
+          ),
+        ],
+        if (_stats != null) ...[
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _StatCounter(
+                count: (_stats!['followers_count'] as num?)
+                        ?.toInt() ??
+                    0,
+                label: 'Abonnés',
+                onTap: () {
+                  final id = _profileId;
+                  if (id == null) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => FollowListScreen(
+                        profileId: id,
+                        mode: FollowListMode.followers,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 28),
+              _StatCounter(
+                count: (_stats!['following_count'] as num?)
+                        ?.toInt() ??
+                    0,
+                label: 'Abonnements',
+                onTap: () {
+                  final id = _profileId;
+                  if (id == null) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => FollowListScreen(
+                        profileId: id,
+                        mode: FollowListMode.following,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -963,6 +1039,47 @@ class _PublicProfileScreenState
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCounter extends StatelessWidget {
+  const _StatCounter({
+    required this.count,
+    required this.label,
+    required this.onTap,
+  });
+
+  final int count;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 6,
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
