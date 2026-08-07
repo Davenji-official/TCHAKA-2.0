@@ -1375,11 +1375,10 @@ Navigator.of(sheetContext).pop();
 
       if (!mounted || !sheetContext.mounted) {
   return;
-      }
+}
 
-      _replaceApplication(updated);
-
-      Navigator.of(sheetContext).pop();
+_replaceApplication(updated);
+Navigator.of(sheetContext).pop();
 
       _showMessage(
         'Candidature refusée.',
