@@ -1286,12 +1286,11 @@ Navigator.of(sheetContext).pop();
         applicationId: applicationId,
       );
 
-      if (!mounted) return;
+      if (!mounted || !sheetContext.mounted) return;
 
-      _replaceApplication(updated);
+_replaceApplication(updated);
 
-      Navigator.of(sheetContext).pop();
-
+Navigator.of(sheetContext).pop();
       _showMessage(
         'Candidature acceptée. 🎉',
       );
