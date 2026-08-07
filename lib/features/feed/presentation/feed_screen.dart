@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/animations/tchaka_entrance.dart';
+import '../../notifications/data/notification_service.dart';
 import '../../projects/data/project_engagement_service.dart';
 import '../../projects/presentation/widgets/tchaka_project_card.dart';
 import '../data/feed_service.dart';
@@ -27,12 +29,29 @@ class _FeedScreenState extends State<FeedScreen> {
 
   int _offset = 0;
 
+  int _unreadNotifications = 0;
+
   static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
     _loadFeed();
+    _loadUnreadNotifications();
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    try {
+      final count = await NotificationService.getUnreadCount();
+
+      if (!mounted) return;
+
+      setState(() {
+        _unreadNotifications = count;
+      });
+    } catch (_) {
+      // Silently ignore: the bell just won't show a badge this session.
+    }
   }
 
   Future<void> _loadFeed() async {
@@ -305,9 +324,20 @@ class _FeedScreenState extends State<FeedScreen> {
         actions: [
           IconButton(
             tooltip: 'Notifications',
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_none_rounded,
+            onPressed: () async {
+              await context.push('/notifications');
+              _loadUnreadNotifications();
+            },
+            icon: Badge(
+              isLabelVisible: _unreadNotifications > 0,
+              label: Text(
+                _unreadNotifications > 9
+                    ? '9+'
+                    : '$_unreadNotifications',
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+              ),
             ),
           ),
         ],
