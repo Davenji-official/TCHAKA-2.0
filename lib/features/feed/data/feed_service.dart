@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../projects/data/project_matching_service.dart';
+
 class FeedService {
   FeedService._();
 
@@ -19,10 +21,34 @@ class FeedService {
 
     final data = response as List<dynamic>;
 
-    return data
+    final projects = data
         .map(
           (item) => Map<String, dynamic>.from(item as Map),
         )
         .toList();
+
+    final userId = _client.auth.currentUser?.id;
+
+    if (userId == null || projects.isEmpty) {
+      return projects;
+    }
+
+    try {
+      final userSkills =
+          await ProjectMatchingService.getMySkills();
+
+      if (userSkills.isEmpty) {
+        return projects;
+      }
+
+      return ProjectMatchingService.rankProjects(
+        projects: projects,
+        userSkills: userSkills,
+      );
+    } catch (_) {
+      // Le feed reste disponible même si le matchmaking
+      // n'est temporairement pas disponible.
+      return projects;
+    }
   }
 }
