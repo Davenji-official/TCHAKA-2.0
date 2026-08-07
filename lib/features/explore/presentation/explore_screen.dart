@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../projects/data/project_discovery_service.dart';
-import '../../../projects/data/project_engagement_service.dart';
-import '../../../projects/domain/project_discovery_filter.dart';
-import '../../../projects/presentation/widgets/tchaka_project_card.dart';
+import '../../projects/data/project_discovery_service.dart';
+import '../../projects/data/project_engagement_service.dart';
+import '../../projects/domain/project_discovery_filter.dart';
+import '../../projects/presentation/widgets/tchaka_project_card.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
