@@ -3,21 +3,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ProjectApplicationService {
   ProjectApplicationService._();
 
-  static final SupabaseClient _client =
-      Supabase.instance.client;
+  static final SupabaseClient _client = Supabase.instance.client;
 
-  static String? get _currentUserId {
-    return _client.auth.currentUser?.id;
-  }
+  static String? get _currentUserId => _client.auth.currentUser?.id;
 
   static Future<Map<String, dynamic>?> getMyApplication(
     String projectId,
   ) async {
     final userId = _currentUserId;
-
-    if (userId == null) {
-      return null;
-    }
+    if (userId == null) return null;
 
     final response = await _client
         .from('project_applications')
@@ -26,10 +20,7 @@ class ProjectApplicationService {
         .eq('applicant_id', userId)
         .maybeSingle();
 
-    if (response == null) {
-      return null;
-    }
-
+    if (response == null) return null;
     return Map<String, dynamic>.from(response);
   }
 
@@ -39,19 +30,13 @@ class ProjectApplicationService {
     String? coverMessage,
   }) async {
     final userId = _currentUserId;
-
     if (userId == null) {
-      throw const AuthException(
-        'Tu dois être connecté pour candidater.',
-      );
+      throw const AuthException('Tu dois être connecté pour candidater.');
     }
 
     final cleanProjectId = projectId.trim();
-
     if (cleanProjectId.isEmpty) {
-      throw const FormatException(
-        'Identifiant du projet invalide.',
-      );
+      throw const FormatException('Identifiant du projet invalide.');
     }
 
     final data = <String, dynamic>{
@@ -60,14 +45,10 @@ class ProjectApplicationService {
     };
 
     final role = proposedRole?.trim();
-    if (role != null && role.isNotEmpty) {
-      data['proposed_role'] = role;
-    }
+    if (role != null && role.isNotEmpty) data['proposed_role'] = role;
 
     final message = coverMessage?.trim();
-    if (message != null && message.isNotEmpty) {
-      data['cover_message'] = message;
-    }
+    if (message != null && message.isNotEmpty) data['cover_message'] = message;
 
     final response = await _client
         .from('project_applications')
@@ -82,18 +63,13 @@ class ProjectApplicationService {
     String applicationId,
   ) async {
     final userId = _currentUserId;
-
     if (userId == null) {
-      throw const AuthException(
-        'Tu dois être connecté.',
-      );
+      throw const AuthException('Tu dois être connecté.');
     }
 
     final response = await _client
         .from('project_applications')
-        .update({
-          'status': 'withdrawn',
-        })
+        .update({'status': 'withdrawn'})
         .eq('id', applicationId)
         .eq('applicant_id', userId)
         .select()
@@ -106,21 +82,15 @@ class ProjectApplicationService {
     String projectId,
   ) async {
     final userId = _currentUserId;
-
     if (userId == null) {
-      throw const AuthException(
-        'Tu dois être connecté.',
-      );
+      throw const AuthException('Tu dois être connecté.');
     }
 
     final response = await _client
         .from('project_applications')
         .select()
         .eq('project_id', projectId)
-        .order(
-          'created_at',
-          ascending: false,
-        );
+        .order('created_at', ascending: false);
 
     return response
         .map<Map<String, dynamic>>(
@@ -135,14 +105,8 @@ class ProjectApplicationService {
   }) async {
     final normalizedStatus = status.trim().toLowerCase();
 
-    if (![
-      'reviewing',
-      'accepted',
-      'rejected',
-    ].contains(normalizedStatus)) {
-      throw const FormatException(
-        'Statut de candidature invalide.',
-      );
+    if (!['reviewing', 'accepted', 'rejected'].contains(normalizedStatus)) {
+      throw const FormatException('Statut de candidature invalide.');
     }
 
     final response = await _client.rpc(
@@ -160,14 +124,26 @@ class ProjectApplicationService {
     required String applicationId,
     String role = 'contributor',
   }) async {
-    // The database RPC derives the effective role from the application's
-    // proposed_role and only accepts p_application_id. Keep `role` in the
-    // Dart API for backward compatibility with existing callers, but do not
-    // send an unsupported RPC parameter to Supabase.
+    final normalizedRole = role.trim().toLowerCase();
+    const validRoles = {
+      'owner',
+      'admin',
+      'developer',
+      'designer',
+      'marketing',
+      'mentor',
+      'contributor',
+    };
+
+    if (!validRoles.contains(normalizedRole)) {
+      throw const FormatException('Rôle de collaboration invalide.');
+    }
+
     final response = await _client.rpc(
       'accept_project_application',
       params: {
         'p_application_id': applicationId,
+        'p_role': normalizedRole,
       },
     );
 
@@ -179,9 +155,7 @@ class ProjectApplicationService {
   ) async {
     final response = await _client.rpc(
       'reject_project_application',
-      params: {
-        'p_application_id': applicationId,
-      },
+      params: {'p_application_id': applicationId},
     );
 
     return Map<String, dynamic>.from(response);
