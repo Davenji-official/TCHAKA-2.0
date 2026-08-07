@@ -1359,41 +1359,42 @@ Navigator.of(sheetContext).pop();
   }
 
   Future<void> _reject(
-    String applicationId,
-    BuildContext sheetContext,
-  ) async {
-    setState(() {
-      _actionLoading = true;
-    });
+  String applicationId,
+  BuildContext sheetContext,
+) async {
+  final navigator = Navigator.of(sheetContext);
 
-    try {
-      final updated =
-          await ProjectApplicationService
-              .rejectApplication(
-        applicationId,
-      );
+  setState(() {
+    _actionLoading = true;
+  });
 
-if (!mounted || !sheetContext.mounted) return;
+  try {
+    final updated =
+        await ProjectApplicationService.rejectApplication(
+      applicationId,
+    );
 
-_replaceApplication(updated);
-Navigator.of(sheetContext).pop();
-      
-      _showMessage(
-        'Candidature refusée.',
-      );
-    } catch (error) {
-      if (!mounted) return;
+    if (!mounted || !navigator.mounted) return;
 
-      _showMessage(
-        _actionErrorMessage(error),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _actionLoading = false;
-        });
-      }
+    _replaceApplication(updated);
+    navigator.pop();
+
+    _showMessage(
+      'Candidature refusée.',
+    );
+  } catch (error) {
+    if (!mounted) return;
+
+    _showMessage(
+      _actionErrorMessage(error),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _actionLoading = false;
+      });
     }
+  }
   }
 
   void _replaceApplication(
