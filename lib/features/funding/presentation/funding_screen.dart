@@ -240,7 +240,7 @@ class _CampaignDialogState extends State<_CampaignDialog> {
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: goal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Objectif')),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(value: currency, items: ['USD', 'HTG', 'EUR', 'CAD'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setState(() => currency = v ?? 'USD'), decoration: const InputDecoration(labelText: 'Devise')),
+          DropdownButtonFormField<String>(initialValue: currency, items: ['USD', 'HTG', 'EUR', 'CAD'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setState(() => currency = v ?? 'USD'), decoration: const InputDecoration(labelText: 'Devise')),
           const SizedBox(height: 12),
           TextField(controller: description, maxLines: 4, decoration: const InputDecoration(labelText: 'Description')),
         ])),
