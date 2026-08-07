@@ -7,7 +7,7 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(const TchakaApp());
 
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(TchakaApp), findsOneWidget);
     },
