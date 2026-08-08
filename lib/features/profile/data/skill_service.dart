@@ -96,9 +96,7 @@ class SkillService {
   }) async {
     final userId = _requireUserId();
 
-    final normalizedProficiency = proficiency == null
-        ? null
-        : proficiency.clamp(1, 5);
+    final normalizedProficiency = proficiency?.clamp(1, 5);
 
     await _client.from('user_skills').upsert(
       {
