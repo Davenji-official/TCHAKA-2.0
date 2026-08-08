@@ -1358,44 +1358,59 @@ Navigator.of(sheetContext).pop();
     );
   }
 
-  Future<void> _reject(
-  String applicationId,
-  BuildContext sheetContext,
-) async {
-  final navigator = Navigator.of(sheetContext);
+    Future<void> _reject(
+    String applicationId,
+    BuildContext sheetContext,
+  ) async {
+    if (!mounted || !sheetContext.mounted) {
+      return;
+    }
 
-  setState(() {
-    _actionLoading = true;
-  });
+    setState(() {
+      _actionLoading = true;
+    });
 
-  try {
-    final updated =
-        await ProjectApplicationService.rejectApplication(
-      applicationId,
-    );
+    try {
+      final updated =
+          await ProjectApplicationService.rejectApplication(
+        applicationId,
+      );
 
-    if (!mounted || !navigator.mounted) return;
+      if (!mounted || !sheetContext.mounted) {
+        return;
+      }
 
-    _replaceApplication(updated);
-    navigator.pop();
+      _replaceApplication(updated);
 
-    _showMessage(
-      'Candidature refusée.',
-    );
-  } catch (error) {
-    if (!mounted) return;
+      if (sheetContext.mounted) {
+        Navigator.of(sheetContext).pop();
+      }
 
-    _showMessage(
-      _actionErrorMessage(error),
-    );
-  } finally {
-    if (mounted) {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Candidature refusée.',
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        _actionErrorMessage(error),
+      );
+    } finally {
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
         _actionLoading = false;
       });
     }
-  }
-  }
+    }
 
   void _replaceApplication(
     Map<String, dynamic> updated,
